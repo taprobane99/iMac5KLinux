@@ -1,6 +1,6 @@
 # Kernel
 
-Simple script to download, build, and install 5K Kernel on iMacs.
+Simple script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kernel on iMacs.
 
 Works on Ubuntu, Mint, and other Debian distros.
 
@@ -10,9 +10,15 @@ Needs 7GB Disk Space and 50-70 minutes compile time.
 
 You should be able to easily switch back to your previous kernel from the GRUB menu at boot.
 
-# Kernel Parameters
+# Fixing screen tearing
 
-Script to fix the following problems (in order) on a 2015 iMac. Unknown if they affect other iMacs.
+Even though 5K works there is a visible tear down the centre of the screen when scrolling fast.
+This is fixed on Ubuntu if you run `iMac5K-MutterTearFix-Ubuntu.sh`. For KDE I hear a fix is being made but not yet
+finished. Mint - unknown.
+
+# Kernel Parameters (GRUB)
+
+Script `iMac5K-GRUBParams.sh` to fix the following problems (in order) on a 2015 iMac. Unknown if they affect other iMacs.
 
 - R9 M395X GPU power management problem (e.g. Resources app refuses to open)
 - Slow booting/shutdown
@@ -20,7 +26,7 @@ Script to fix the following problems (in order) on a 2015 iMac. Unknown if they 
 
 # Audio
 
-Script to install Speaker tuning (flat frequency response) I made using a professional microphone. This
+Script `iMacAudioInstall.sh` to install Speaker tuning (flat frequency response) I made using a professional microphone. This
 should make audio sound much better. Tuned on late 2015 iMac - unknown if will work well on other iMacs.
 Currently +/- 7 dB, hoping to retune soon to make it even flatter.
 
