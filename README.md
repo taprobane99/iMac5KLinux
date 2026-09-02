@@ -29,7 +29,8 @@ to be a bug that the volume is higher than last set after reboot or logout/login
 volume. Do not set the master system volume "Built-in Audio Analogue Surround 4.0" to 100% it's too loud !!
 
 It is essential to install Pavucontrol to set 4 channels as output, and set volumes to sensible values
-`sudo apt install pavucontrol`
+`sudo apt install pavucontrol`. In the Ubuntu speaker settings you need to choose "iMac Speakers" to use my
+tuning.
 
 <img width="600" alt="image" src="https://github.com/user-attachments/assets/9582ea63-e0ce-40f9-a59e-b0b105edfa54" />
 
