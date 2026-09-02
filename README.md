@@ -6,7 +6,7 @@ Works on Ubuntu, Mint, and other Debian distros.
 
 Not tested on all iMacs (I only have a late 2015 iMac). Backup important files before running.
 
-Needs 35GB Disk Space (hopefully less now I disabled debug symbols) and 90 minutes compile time on a 2015 i7 iMac.
+Needs 7GB Disk Space and 70 minutes compile time on a 2015 i7 iMac.
 
 You should be able to easily switch back to your previous kernel from the GRUB menu at booth.
 
