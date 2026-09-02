@@ -42,7 +42,7 @@ tuning.
 
 # Wide Gamut (P3) Colour Support
 
-You will notice the iMac colours look very saturated. In Ubuntu toggle your display scaling to a different value and back again to generate `~/config/monitors.xml`.
+You will notice the iMac colours look very saturated. In Ubuntu toggle your display scaling to a different value and back again to generate `~/.config/monitors.xml` (show hidden files in Files to find this from your Home folder).
 Then add this line below <mode>....</mode> in monitors.xml for the screen mode you are using
 `<colormode>sdr-native</colormode>`. Log out/in to see changes.
 
