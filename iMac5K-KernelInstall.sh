@@ -216,4 +216,4 @@ echo "==========================================="
 printf "Total Time Taken:      %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS_LEFT
 echo "Total Disk Space Used for Build: ${SPACE_USED_MB} MB"
 echo "==========================================="
-echo "Update GRUB and reboot to boot into linux-${KERNEL_VERSION}${OS_SUFFIX}."
+echo "Reboot to boot into linux-${KERNEL_VERSION}${OS_SUFFIX}."
