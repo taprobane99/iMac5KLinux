@@ -46,6 +46,10 @@ You will notice the iMac colours look very saturated. In Ubuntu toggle your disp
 Then add this line below `<mode>...</mode>` in `monitors.xml` for the screen mode you are using
 `<colormode>sdr-native</colormode>`. Log out/in to see changes.
 
+# Font Rendering
+
+Ubuntu/Gnome still uses outline hinting for fonts on HiDPI displays. Some non-GTK apps still apply subpixel-antialiasing, and hinting to fonts on HiDPI displays. This script `iMac5K-FontRenderingFix.` fixes those problems.
+
 # Running .sh scripts
 
 Right-click>Properties>Executable as Program should be ticked, then
