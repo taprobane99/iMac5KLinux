@@ -49,7 +49,7 @@ Then add this line below `<mode>...</mode>` in `monitors.xml` for the screen mod
 
 # Font Rendering
 
-Ubuntu/Gnome still uses outline hinting for fonts on HiDPI displays. Some non-GTK apps still apply subpixel-antialiasing, and hinting to fonts on HiDPI displays. This script `iMac5K-FontRenderingFix.` fixes those problems.
+Ubuntu/Gnome still uses outline hinting for fonts on HiDPI displays. Some non-GTK apps still apply subpixel-antialiasing, and hinting to fonts on HiDPI displays. This script `iMac5K-FontRenderingFix.sh` fixes those problems.
 
 # Running .sh scripts
 
