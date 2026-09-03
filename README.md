@@ -39,6 +39,8 @@ tuning.
 
 <img width="600" alt="image" src="https://github.com/user-attachments/assets/9582ea63-e0ce-40f9-a59e-b0b105edfa54" />
 
+Issues: microphone currently not working on imac 17,1
+
 # Wide Gamut (P3) Colour Support
 
 You will notice the iMac colours look very saturated. In Ubuntu toggle your display scaling to a different value and back again to generate `~/.config/monitors.xml` (show hidden files in Files to find this from your Home folder).
