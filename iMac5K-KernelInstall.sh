@@ -52,7 +52,7 @@ START_TIME=$SECONDS
 START_USED_MB=$(df -m / | awk 'NR==2 {print $3}')
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
-PATCH_FILE="${SCRIPT_DIR}/5k-imac-${KERNEL_VERSION}.patch"
+PATCH_FILE="${SCRIPT_DIR}/iMac5K-${KERNEL_VERSION}.patch"
 SOURCE_DIR="${SCRIPT_DIR}/linux-${KERNEL_VERSION}"
 
 # Verify Debian-based OS and set kernel localversion suffix
@@ -136,7 +136,7 @@ if [ -f "${PATCH_FILE}" ]; then
         echo "🚨 PATCH FAILED: Some parts of the patch were rejected. 🚨"
         echo "=========================================================="
         echo "The kernel source code has likely changed in a way that"
-        echo "conflicts with your '5k-imac-${KERNEL_VERSION}.patch' file."
+        echo "conflicts with your 'iMac5K-${KERNEL_VERSION}.patch' file."
         echo ""
         echo "Don't worry—your system is fine. To fix this:"
         echo "1. Look for '*.rej' files in the 'linux-${KERNEL_VERSION}' folder."
