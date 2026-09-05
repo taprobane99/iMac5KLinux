@@ -4,7 +4,7 @@ Simple script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kerne
 
 Works on Ubuntu, Mint, and other Debian distros.
 
-Only tested on a late 2015 iMac. Backup important files before running.
+Only tested on a late 2015 iMac. It should work on all 5K iMacs expect perhaps the iMac Pro. Backup important files before running.
 
 Needs 7GB Disk Space and 50-70 minutes compile time.
 
@@ -21,7 +21,7 @@ finished. Mint - unknown.
 Script `iMac5K-GRUBParams.sh` to fix the following problems (in order) on a 2015 iMac. Unknown if they affect other iMacs.
 
 - R9 M395X GPU power management problem (e.g. Resources app refuses to open)
-- Slow booting/shutdown
+- Slow booting (~2 mins)/slow shutdown
 - Max brightness 400 nits instead of 500 nits
 
 # Audio
@@ -30,16 +30,15 @@ Script `iMacAudioInstall.sh` to install Speaker tuning (flat frequency response)
 should make audio sound much better. Tuned on late 2015 iMac - unknown if will work well on other iMacs.
 Currently +/- 7 dB, hoping to retune soon to make it even flatter.
 
-!! Always set the volume very low before playing music/other audio when testing this. There seems
-to be a bug that the volume is higher than last set after reboot or logout/login and before adjusting
-volume. Do not set the master system volume "Built-in Audio Analogue Surround 4.0" to 100% it's too loud !!
+!! Always set the volume low before playing music. There seems
+to be a bug that the volume is higher than last set after reboot or logout/login [edit - hopefully solved now]. Do not set the master system volume "Built-in Audio Analogue Surround 4.0" to 100% it's too loud !!
 
-It is essential to install Pavucontrol to set 4 channels as output (Configuration tab), and set volumes to sensible values (Output Devices tab) `sudo apt install pavucontrol`. In the Ubuntu speaker settings you need to choose "iMac Speakers" to use my
+It is essential to install Pavucontrol `sudo apt install pavucontrol` to set 4 channels as output (Configuration tab), and set volumes to sensible values (Output Devices tab). In the Ubuntu speaker settings you need to choose "iMac Speakers" to use my
 tuning.
 
 <img width="600" alt="image" src="https://github.com/user-attachments/assets/9582ea63-e0ce-40f9-a59e-b0b105edfa54" />
 
-Issues: microphone currently not working on imac 17,1
+Issues: microphone currently not working on late 2015 iMac.
 
 # Wide Gamut (P3) Colour Support
 
