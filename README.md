@@ -1,6 +1,6 @@
 # Kernel
 
-Simple script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kernel on iMacs.
+Simple script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kernel on iMacs, alongside your existing kernel.
 
 Works on Ubuntu, Mint, and other Debian distros.
 
