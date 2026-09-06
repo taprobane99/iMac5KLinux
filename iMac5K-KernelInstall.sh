@@ -12,22 +12,41 @@ echo "=== Select Kernel Version to Build ======"
 echo "==========================================="
 echo "1) Kernel 7.2.3 (Stable)"
 echo "2) Kernel 7.3-rc1 (Mainline)"
-echo "3) Quit"
+echo "3) Kernel 7.2.x (Latest Stable using 7.2.3 patch)"
+echo "4) Quit"
 echo "==========================================="
-read -p "Enter choice [1-3]: " choice
+read -p "Enter choice [1-4]: " choice
 
 case $choice in
     1)
         KERNEL_VERSION="7.2.3"
+        PATCH_VERSION="7.2.3"
         KERNEL_TARBALL="linux-${KERNEL_VERSION}.tar.xz"
         KERNEL_URL="https://cdn.kernel.org/pub/linux/kernel/v7.x/${KERNEL_TARBALL}"
         ;;
     2)
         KERNEL_VERSION="7.3-rc1"
+        PATCH_VERSION="7.3-rc1"
         KERNEL_TARBALL="linux-${KERNEL_VERSION}.tar.gz"
         KERNEL_URL="https://git.kernel.org/torvalds/t/${KERNEL_TARBALL}"
         ;;
     3)
+        echo "Detecting latest 7.2.x kernel from cdn.kernel.org..."
+        LATEST_TARBALL=$(curl -s "https://cdn.kernel.org/pub/linux/kernel/v7.x/" | grep -o 'linux-7\.2\.[0-9]*\.tar\.xz' | sort -V | tail -n 1)
+        if [ -z "$LATEST_TARBALL" ]; then
+            echo "Error: Could not find any 7.2.x releases."
+            exit 1
+        fi
+        
+        # Extract the version number dynamically
+        KERNEL_VERSION=${LATEST_TARBALL#linux-}
+        KERNEL_VERSION=${KERNEL_VERSION%.tar.xz}
+        PATCH_VERSION="7.2.3"
+        KERNEL_TARBALL="${LATEST_TARBALL}"
+        KERNEL_URL="https://cdn.kernel.org/pub/linux/kernel/v7.x/${KERNEL_TARBALL}"
+        echo "Found version: ${KERNEL_VERSION}"
+        ;;
+    4)
         echo "Exiting script."
         exit 0
         ;;
@@ -52,7 +71,8 @@ START_TIME=$SECONDS
 START_USED_MB=$(df -m / | awk 'NR==2 {print $3}')
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
-PATCH_FILE="${SCRIPT_DIR}/iMac5K-${KERNEL_VERSION}.patch"
+# Update PATCH_FILE to use the new PATCH_VERSION variable
+PATCH_FILE="${SCRIPT_DIR}/iMac5K-${PATCH_VERSION}.patch"
 SOURCE_DIR="${SCRIPT_DIR}/linux-${KERNEL_VERSION}"
 
 # Verify Debian-based OS and set kernel localversion suffix
@@ -136,7 +156,7 @@ if [ -f "${PATCH_FILE}" ]; then
         echo "🚨 PATCH FAILED: Some parts of the patch were rejected. 🚨"
         echo "=========================================================="
         echo "The kernel source code has likely changed in a way that"
-        echo "conflicts with your 'iMac5K-${KERNEL_VERSION}.patch' file."
+        echo "conflicts with your 'iMac5K-${PATCH_VERSION}.patch' file."
         echo ""
         echo "Don't worry—your system is fine. To fix this:"
         echo "1. Look for '*.rej' files in the 'linux-${KERNEL_VERSION}' folder."
