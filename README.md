@@ -10,6 +10,8 @@ Needs 7GB Disk Space and 50-70 minutes compile time.
 
 You should be able to easily switch back to your previous kernel from the GRUB menu at boot.
 
+Credit: many thanks to https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-logging which I used to initially generate my 7.0 patch
+
 # Fixing screen tearing
 
 Even though 5K works there is a visible tear down the centre of the screen when scrolling fast.
