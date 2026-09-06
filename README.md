@@ -4,7 +4,7 @@ Simple script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kerne
 
 Works on Ubuntu 26.04 LTS. May work on Mint, and other Debian distros.
 
-It should work on all 5K iMacs expect perhaps those with Vega GPUs. Backup important files before running.
+It should work on all 5K iMacs except perhaps those with Vega GPUs. Backup important files before running.
 
 Needs 7GB Disk Space and 50-70 minutes compile time.
 
