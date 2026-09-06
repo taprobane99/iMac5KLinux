@@ -22,7 +22,7 @@ Models confirmed working:
 | **Mid 2015** | iMac15,1 | R9 M295X (Tonga) | |
 | **Late 2015** | iMac17,1 | R9 M380 / M390 (Bonaire / Curacao) | ✅ |
 | **Late 2015** | iMac17,1 | R9 M395 / M395X (Tonga) | ✅ |
-| **Mid 2017** | iMac18,3 | Pro 570 / 575 / 580 (Polaris) | |
+| **Mid 2017** | iMac18,3 | Pro 570 / 575 / 580 (Polaris) | ✅ |
 | **2019** | iMac19,1 | Pro 570X / 575X / 580X (Polaris) | |
 | **2019** | iMac19,1 | Pro Vega 48 (Vega) | |
 | **2020** | iMac20,1 | Pro 5300 / 5500 XT (Navi / RDNA) | |
