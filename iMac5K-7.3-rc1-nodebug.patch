@@ -1,35 +1,16 @@
-diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
+diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-09-06 13:27:12.413340244 +0100
-@@ -61,6 +61,7 @@
- #include "amdgpu_dm_irq.h"
- #include "dm_helpers.h"
- #include "amdgpu_dm_mst_types.h"
-+#include "grph_object_id.h"
- #if defined(CONFIG_DEBUG_FS)
- #include "amdgpu_dm_debugfs.h"
- #endif
-@@ -85,7 +86,9 @@
- #include <linux/power_supply.h>
- #include <linux/firmware.h>
- #include <linux/component.h>
-+#include <linux/dmi.h>
- #include <linux/sort.h>
-+#include <generated/utsrelease.h>
- 
- #include <drm/drm_privacy_screen_consumer.h>
- #include <drm/display/drm_dp_mst_helper.h>
-@@ -141,6 +144,9 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-09-07 00:05:46.651653940 +0100
+@@ -141,6 +141,8 @@
  /* removes and deallocates the drm structures, created by the above function */
  static void amdgpu_dm_destroy_drm_device(struct amdgpu_display_manager *dm);
  
-+bool amdgpu_dm_mode_matches_tile_size(const struct drm_connector *connector, const struct drm_display_mode *mode);
 +void amdgpu_dm_reprobe_tiled_root_after_slave(struct amdgpu_device *adev);
 +
  static int amdgpu_dm_atomic_setup_commit(struct drm_atomic_commit *state);
  static void amdgpu_dm_atomic_commit_tail(struct drm_atomic_commit *state);
  STATIC_IFN_KUNIT void dm_enable_per_frame_crtc_master_sync(struct dc_state *context);
-@@ -2572,6 +2578,8 @@
+@@ -2572,6 +2574,8 @@
  		amdgpu_set_panel_orientation(&aconnector->base);
  	}
  
@@ -38,31 +19,21 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/a
  	/* Debug dump: list all DC links and their associated sinks after detection
  	 * is complete for all connectors. This provides a comprehensive view of the
  	 * final state without repeating the dump for each connector.
-diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c
+diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-09-06 18:13:26.260303648 +0100
-@@ -70,6 +70,8 @@
- #include <drm/display/drm_hdcp_helper.h>
- 
- #include <linux/backlight.h>
-+#include <linux/dmi.h>
-+#include <generated/utsrelease.h>
- 
- #include <media/cec-notifier.h>
- 
-@@ -77,6 +79,11 @@
- #include "modules/inc/mod_power.h"
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-09-07 00:05:01.717649060 +0100
+@@ -78,6 +78,10 @@
  
  #include "amdgpu_dm_trace.h"
-+#include "atom.h"
-+
+ 
 +/* Forward declarations */
 +bool amdgpu_dm_mode_matches_tile_size(const struct drm_connector *connector, const struct drm_display_mode *mode);
 +void amdgpu_dm_reprobe_tiled_root_after_slave(struct amdgpu_device *adev);
- 
++
  /* Encoder functions */
  
-@@ -2236,10 +2243,169 @@
+ static void amdgpu_dm_encoder_destroy(struct drm_encoder *encoder)
+@@ -2236,10 +2240,169 @@
  		break;
  	}
  
@@ -233,7 +204,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/a
  struct dc_stream_state *
  amdgpu_dm_create_validate_stream_for_sink(struct drm_connector *connector,
  					  const struct drm_display_mode *drm_mode,
-@@ -2432,7 +2598,7 @@
+@@ -2432,7 +2595,7 @@
  
  			if (dc_result == DC_OK)
  				dc_result = dm_validate_stream_color_format(drm_state, stream);
@@ -242,7 +213,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/a
  			if (dc_result == DC_OK)
  				return stream;
  
-@@ -2474,6 +2640,16 @@
+@@ -2474,6 +2637,16 @@
  			(mode->flags & DRM_MODE_FLAG_DBLSCAN))
  		return result;
  
@@ -259,7 +230,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/a
  	/*
  	 * Only run this the first time mode_valid is called to initilialize
  	 * EDID mgmt
-@@ -2503,6 +2679,9 @@
+@@ -2503,6 +2676,9 @@
  	if (stream) {
  		dc_stream_release(stream);
  		result = MODE_OK;
@@ -269,7 +240,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/a
  	}
  
  fail:
-@@ -3117,6 +3296,9 @@
+@@ -3117,6 +3293,9 @@
  			amdgpu_dm_connector_add_common_modes(encoder, connector);
  		amdgpu_dm_connector_add_freesync_modes(connector, drm_edid);
  	}
@@ -279,7 +250,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/a
  	amdgpu_dm_fbc_init(connector);
  
  	return amdgpu_dm_connector->num_modes;
-diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c
+diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-08-30 21:34:40.000000000 +0100
 +++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-09-06 19:18:55.469902253 +0100
 @@ -97,12 +97,64 @@
@@ -420,74 +391,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/a
  	if (link->aux_mode) {
  		union test_request test_request = {0};
  		union test_response test_response = {0};
-diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/core/dc.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/core/dc.c
---- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/core/dc.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/core/dc.c	2026-09-05 23:26:01.910453383 +0100
-@@ -60,6 +60,7 @@
- #include "link_hwss.h"
- #include "link_encoder.h"
- #include "link_enc_cfg.h"
-+#include "grph_object_id.h"
- 
- #include "link_service.h"
- #include "link/protocols/link_dp_capability.h"
-@@ -1724,23 +1725,32 @@
- 		 * same timing, add all tgs with same timing to the group
- 		 */
- 		for (j = i + 1; j < pipe_count; j++) {
-+			bool timing_sync = false;
-+			bool vblank_sync = false;
-+
- 			if (!unsynced_pipes[j])
- 				continue;
-+
-+			if (sync_type != TIMING_SYNCHRONIZABLE &&
-+			    dc->hwss.enable_vblanks_synchronization &&
-+			    unsynced_pipes[j]->stream_res.tg->funcs->align_vblanks)
-+				vblank_sync = resource_are_vblanks_synchronizable(
-+						unsynced_pipes[j]->stream,
-+						pipe_set[0]->stream);
-+
-+			if (sync_type != VBLANK_SYNCHRONIZABLE)
-+				timing_sync = resource_are_streams_timing_synchronizable(
-+						unsynced_pipes[j]->stream,
-+						pipe_set[0]->stream);
-+
- 			if (sync_type != TIMING_SYNCHRONIZABLE &&
--				dc->hwss.enable_vblanks_synchronization &&
--				unsynced_pipes[j]->stream_res.tg->funcs->align_vblanks &&
--				resource_are_vblanks_synchronizable(
--					unsynced_pipes[j]->stream,
--					pipe_set[0]->stream)) {
-+			    vblank_sync) {
- 				sync_type = VBLANK_SYNCHRONIZABLE;
- 				pipe_set[group_size] = unsynced_pipes[j];
- 				unsynced_pipes[j] = NULL;
- 				group_size++;
--			} else
--			if (sync_type != VBLANK_SYNCHRONIZABLE &&
--				resource_are_streams_timing_synchronizable(
--					unsynced_pipes[j]->stream,
--					pipe_set[0]->stream)) {
-+			} else if (sync_type != VBLANK_SYNCHRONIZABLE &&
-+				   timing_sync) {
- 				sync_type = TIMING_SYNCHRONIZABLE;
- 				pipe_set[group_size] = unsynced_pipes[j];
- 				unsynced_pipes[j] = NULL;
-@@ -1779,7 +1789,6 @@
- 				status->timing_sync_info.master = true;
- 			else
- 				status->timing_sync_info.master = false;
--
- 		}
- 
- 		/* remove any other unblanked pipes as they have already been synced */
-@@ -8611,4 +8620,3 @@
- 
- 	return more;
- }
--
-diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc.h linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc.h
+diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc.h linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc.h
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc.h	2026-08-30 21:34:40.000000000 +0100
 +++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc.h	2026-09-05 23:26:01.912504498 +0100
 @@ -1990,6 +1990,13 @@
@@ -596,7 +500,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc.h lin
  struct dc_sink_init_data {
  	enum signal_type sink_signal;
  	struct dc_link *link;
-diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc_types.h linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc_types.h
+diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc_types.h linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc_types.h
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc_types.h	2026-08-30 21:34:40.000000000 +0100
 +++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc_types.h	2026-09-05 23:26:01.913453371 +0100
 @@ -194,6 +194,18 @@
@@ -618,9 +522,9 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc_types
  };
  
  /**
-diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c
+diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-09-06 19:05:23.549862597 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-09-06 23:40:30.759908437 +0100
 @@ -48,9 +48,12 @@
  #include "link_enc_cfg.h"
  #include "dm_helpers.h"
@@ -634,13 +538,11 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/lin
  
  #define DC_LOGGER \
  	link->ctx->logger
-@@ -105,6 +108,144 @@
+@@ -105,6 +108,126 @@
  	return transaction_type;
  }
  
-+static enum dc_status tiled_root_write_panel_wake(struct dc_link *link,
-+						  const struct dc_link *slave_link,
-+						  const char *stage)
++static enum dc_status tiled_root_write_panel_wake(struct dc_link *link)
 +{
 +	enum dc_status status;
 +
@@ -661,10 +563,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/lin
 +}
 +
 +static bool tiled_slave_poll_aux(struct dc_link *link,
-+				 struct dc_link *root_link,
-+				 const char *stage,
-+				 uint8_t *dpcd_rev_out,
-+				 unsigned int *elapsed_ms_out)
++				 struct dc_link *root_link)
 +{
 +	enum ddc_transaction_type old_transaction_type;
 +	bool old_aux_mode;
@@ -689,7 +588,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/lin
 +	 * torn down. At initial boot this is an idempotent re-assert.
 +	 */
 +	if (root_link)
-+		tiled_root_write_panel_wake(root_link, link, stage);
++		tiled_root_write_panel_wake(root_link);
 +
 +	for (elapsed_ms = 0; ; elapsed_ms += TILED_SLAVE_AUX_WAKE_POLL_MS) {
 +		dpcd_rev = 0;
@@ -697,10 +596,6 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/lin
 +					    &dpcd_rev, sizeof(dpcd_rev));
 +
 +		if (status == DC_OK && dpcd_rev != 0) {
-+			if (dpcd_rev_out)
-+				*dpcd_rev_out = dpcd_rev;
-+			if (elapsed_ms_out)
-+				*elapsed_ms_out = elapsed_ms;
 +			return true;
 +		}
 +
@@ -712,10 +607,6 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/lin
 +
 +	set_ddc_transaction_type(link->ddc, old_transaction_type);
 +	link->aux_mode = old_aux_mode;
-+	if (dpcd_rev_out)
-+		*dpcd_rev_out = dpcd_rev;
-+	if (elapsed_ms_out)
-+		*elapsed_ms_out = elapsed_ms;
 +
 +	return false;
 +}
@@ -739,8 +630,6 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/lin
 +static bool tiled_slave_try_pre_detect_aux(struct dc_link *link)
 +{
 +	struct dc_link *root_link;
-+	uint8_t dpcd_rev = 0;
-+	unsigned int elapsed_ms = 0;
 +	unsigned int i;
 +
 +	if (!dc_link_has_tiled_slave_panel_patch(link) || !link->ddc)
@@ -748,8 +637,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/lin
 +
 +	root_link = link->tiled_peer;
 +
-+	if (tiled_slave_poll_aux(link, root_link, "slave-predetect",
-+				&dpcd_rev, &elapsed_ms)) {
++	if (tiled_slave_poll_aux(link, root_link)) {
 +		return true;
 +	}
 +
@@ -765,9 +653,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/lin
 +		    !candidate->ddc)
 +			continue;
 +
-+		if (tiled_slave_poll_aux(candidate, root_link,
-+					"slave-predetect-fallback",
-+					&dpcd_rev, &elapsed_ms)) {
++		if (tiled_slave_poll_aux(candidate, root_link)) {
 +			tiled_slave_rewire_peer(candidate, root_link);
 +			return candidate == link;
 +		}
@@ -779,7 +665,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/lin
  static enum signal_type get_basic_signal_type(struct graphics_object_id encoder,
  					      struct graphics_object_id downstream)
  {
-@@ -626,6 +767,9 @@
+@@ -626,6 +749,9 @@
  	struct audio_support *audio_support = &link->dc->res_pool->audio_support;
  
  	sink_caps->signal = link_detect_sink_signal_type(link, reason);
@@ -789,7 +675,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/lin
  	sink_caps->transaction_type =
  		get_ddc_transaction_type(sink_caps->signal);
  
-@@ -968,6 +1112,14 @@
+@@ -968,6 +1094,14 @@
  				(link->ep_type == DISPLAY_ENDPOINT_USB4_DPIA &&
  				!link->dc->config.enable_dpia_pre_training)) {
  			destrictive = false;
@@ -804,7 +690,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/lin
  		} else if (link_dp_get_encoding_format(&max_link_cap) ==
  				DP_8b_10b_ENCODING) {
  			if (link->dpcd_caps.is_mst_capable ||
-@@ -1140,6 +1292,15 @@
+@@ -1140,6 +1274,15 @@
  		return false;
  	}
  
@@ -820,18 +706,10 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/lin
  	prev_sink = link->local_sink;
  	if (prev_sink) {
  		dc_sink_retain(prev_sink);
-diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_dpms.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_dpms.c
+diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_dpms.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_dpms.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_dpms.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_dpms.c	2026-09-06 18:01:05.040321698 +0100
-@@ -58,6 +58,7 @@
- #include "clk_mgr.h"
- #include "atomfirmware.h"
- #include "vpg.h"
-+#include "grph_object_id.h"
- 
- #define DC_LOGGER \
- 	dc_logger
-@@ -79,6 +80,23 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_dpms.c	2026-09-07 00:06:24.879759615 +0100
+@@ -79,6 +79,23 @@
  #define MAX_MTP_SLOT_COUNT 64
  #define LINK_TRAINING_ATTEMPTS 4
  #define PEAK_FACTOR_X1000 1006
@@ -855,7 +733,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/lin
  
  void link_blank_all_dp_displays(struct dc *dc)
  {
-@@ -1023,6 +1041,7 @@
+@@ -1023,6 +1040,7 @@
  				&new_downspread.raw, sizeof(new_downspread));
  		}
  
@@ -863,17 +741,10 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/lin
  	} else {
  		dm_helpers_mst_enable_stream_features(stream);
  	}
-diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c
+diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c	2026-09-06 18:10:31.305416089 +0100
-@@ -50,12 +50,16 @@
- #include "link_enc_cfg.h"
- #include "dc_dmub_srv.h"
- #include "gpio_service_interface.h"
-+#include "grph_object_id.h"
- 
- #define DC_TRACE_LEVEL_MESSAGE(...) /* do nothing */
- 
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c	2026-09-07 00:06:41.134816983 +0100
+@@ -56,6 +56,9 @@
  #define DC_LOGGER \
  	link->ctx->logger
  
@@ -883,7 +754,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/pro
  #ifndef MAX
  #define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
  #endif
-@@ -63,6 +67,58 @@
+@@ -63,6 +66,58 @@
  #define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
  #endif
  
@@ -942,7 +813,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/pro
  struct dp_lt_fallback_entry {
  	enum dc_lane_count lane_count;
  	enum dc_link_rate link_rate;
-@@ -1416,6 +1472,9 @@
+@@ -1416,6 +1471,9 @@
  
  void dpcd_set_source_specific_data(struct dc_link *link)
  {
@@ -952,7 +823,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/pro
  	if (!link->dc->vendor_signature.is_valid) {
  		enum dc_status __maybe_unused result_write_min_hblank = DC_NOT_SUPPORTED;
  		struct dpcd_amd_signature amd_signature = {0};
-@@ -1495,6 +1554,8 @@
+@@ -1495,6 +1553,8 @@
  				link->dc->vendor_signature.data.raw,
  				sizeof(link->dc->vendor_signature.data.raw));
  	}
@@ -961,7 +832,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/pro
  }
  
  void dpcd_write_cable_id_to_dprx(struct dc_link *link)
-diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c
+diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c	2026-08-30 21:34:40.000000000 +0100
 +++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c	2026-09-05 23:26:01.920647126 +0100
 @@ -249,3 +249,18 @@
@@ -983,7 +854,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/pro
 +	return core_link_write_dpcd(root_link, APPLE_5K_DPCD_ROOT_PANEL_LATCH,
 +				    &payload, sizeof(payload));
 +}
-diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h
+diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h	2026-08-30 21:34:40.000000000 +0100
 +++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h	2026-09-05 23:26:01.921147832 +0100
 @@ -39,4 +39,12 @@
@@ -999,7 +870,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/pro
 +enum dc_status link_apple_5k_root_panel_latch_pulse(struct dc_link *root_link);
 +
  #endif
-diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c
+diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c	2026-08-30 21:34:40.000000000 +0100
 +++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c	2026-09-06 18:15:21.041498474 +0100
 @@ -1091,12 +1091,76 @@
@@ -1217,26 +1088,18 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/pro
  	return false;
  }
 -
-diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c
+diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c	2026-09-05 23:26:01.925453323 +0100
-@@ -28,6 +28,8 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c	2026-09-06 23:36:10.352373957 +0100
+@@ -28,6 +28,7 @@
   * as PSR and ABM and it also manages specs defined eDP panel power sequences.
   */
  
-+#include <linux/dmi.h>
 +
  #include "link_edp_panel_control.h"
  #include "link_ddc.h"
  #include "link_dpcd.h"
-@@ -41,12 +43,18 @@
- #include "abm.h"
- #include "resource.h"
- #include "link_dp_panel_replay.h"
-+#include "grph_object_id.h"
- #define DC_LOGGER \
- 	link->ctx->logger
- #define DC_LOGGER_INIT(logger)
+@@ -47,6 +48,11 @@
  
  #define DP_SINK_PR_ENABLE_AND_CONFIGURATION		0x37B
  
@@ -1248,7 +1111,7 @@ diff -urN '--exclude=.git' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/pro
  /* Travis */
  static const char DP_VGA_LVDS_CONVERTER_ID_2[] = "sivarT";
  /* Nutmeg */
-@@ -139,6 +147,9 @@
+@@ -139,6 +145,9 @@
  		}
  	}
  
