@@ -2,15 +2,32 @@
 
 Simple script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kernel on iMacs, alongside your existing kernel.
 
-Works on Ubuntu, Mint, and other Debian distros.
+Works on Ubuntu 26.04 LTS. May work on Mint, and other Debian distros.
 
-Only tested on a late 2015 iMac. It should work on all 5K iMacs expect perhaps the iMac Pro. Backup important files before running.
+It should work on all 5K iMacs expect perhaps those with Vega GPUs. Backup important files before running.
 
 Needs 7GB Disk Space and 50-70 minutes compile time.
 
 You should be able to easily switch back to your previous kernel from the GRUB menu at boot.
 
-Credit: many thanks to https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-logging which I used to initially generate my 7.0 patch
+Credit: thanks to https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-logging which I used to initially generate my 7.0 patch
+
+Models confirmed working:
+
+| Generation / Release Year | Model Identifier | GPU Option (Family) | Working |
+| :--- | :--- | :--- | :--- |
+| **Late 2014** | iMac15,1 | R9 M290X (Curacao) | |
+| **Late 2014** | iMac15,1 | R9 M295X (Tonga) | |
+| **Mid 2015** | iMac15,1 | R9 M290X (Curacao) | |
+| **Mid 2015** | iMac15,1 | R9 M295X (Tonga) | |
+| **Late 2015** | iMac17,1 | R9 M380 / M390 (Bonaire / Curacao) | ✅ |
+| **Late 2015** | iMac17,1 | R9 M395 / M395X (Tonga) | ✅ |
+| **Mid 2017** | iMac18,3 | Pro 570 / 575 / 580 (Polaris) | |
+| **2019** | iMac19,1 | Pro 570X / 575X / 580X (Polaris) | |
+| **2019** | iMac19,1 | Pro Vega 48 (Vega) | |
+| **2020** | iMac20,1 | Pro 5300 / 5500 XT (Navi / RDNA) | |
+| **2020** | iMac20,2 | Pro 5700 / 5700 XT (Navi / RDNA) | |
+| **2017 (iMac Pro)** | iMacPro1,1 | Pro Vega 56 / 64 / 64X (Vega) | |
 
 # Fixing screen tearing
 
@@ -50,7 +67,6 @@ Then add this line below `<mode>...</mode>` in `monitors.xml` for the screen mod
 
 <img width="400" alt="Screenshot From 2026-09-06 10-39-45" src="https://github.com/user-attachments/assets/a755507e-ad5b-4fec-bea5-0bb333e2e7f2" />
 
-
 # Font Rendering
 
 Ubuntu/Gnome still uses outline hinting for fonts on HiDPI displays. Some non-GTK apps still apply subpixel-antialiasing, and hinting to fonts on HiDPI displays. This script `iMac5K-FontRenderingFix.sh` fixes those problems.
@@ -61,7 +77,6 @@ Right-click>Properties>Executable as Program should be ticked, then
 drag the .sh file into a terminal window and press enter
 
 <img width="400" alt="image" src="https://github.com/user-attachments/assets/ad442b19-3122-4767-83d9-adaa47f8be8d" />
-
 
 # Contributions
 
