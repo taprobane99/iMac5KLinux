@@ -43,7 +43,7 @@ Script `iMac5K-GRUBParams.sh` to fix the following problems (in order) on a 2015
 - Slow booting (~2 mins)/slow shutdown
 - Max brightness 400 nits instead of 500 nits
 
-Also, `iMac5K-GRUBFontSize-Ubuntu` fixes tiny text in the GRUB menu.
+Also, `iMac5K-GRUBFontSize-Ubuntu.sh` fixes tiny text in the GRUB menu.
 
 # Audio
 
