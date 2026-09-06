@@ -9,7 +9,7 @@ fi
 
 GRUB_FILE="/etc/default/grub"
 BACKUP_FILE="/etc/default/grub.bak.$(date +%Y%m%d%H%M%S)"
-FLAGS=("amdgpu.ppfeaturemask=0xfff7bbff" "reboot=pci" "acpi_backlight=native intel_iommu=on iommu=pt")
+FLAGS=("amdgpu.ppfeaturemask=0xfff7bbff" "reboot=pci" "acpi_backlight=native" "intel_iommu=on" "iommu=pt")
 
 if [[ ! -f "$GRUB_FILE" ]]; then
     echo "Error: $GRUB_FILE not found." >&2
