@@ -80,6 +80,12 @@ drag the .sh file into a terminal window and press enter
 
 <img width="400" alt="image" src="https://github.com/user-attachments/assets/ad442b19-3122-4767-83d9-adaa47f8be8d" />
 
+# Other nice things for your iMac
+
+https://github.com/taranovegor/mbpfan (generic install) for Fan Control with EMA smoothing
+https://github.com/aunetx/blur-my-shell/tree/refactor/unified-blur-backend (clone this branch) for Liquid Glass
+https://github.com/kem-a/kiwi-kemma for making Ubuntu/Gnome feel at home for Mac users
+
 # Contributions
 
 Please add contributions via opening Issues. There are sure to be quirks for other iMacs that are
