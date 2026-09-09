@@ -1,6 +1,6 @@
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-09-07 23:45:17.048658064 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-09-08 23:06:25.933520321 +0100
 @@ -141,6 +141,8 @@
  /* removes and deallocates the drm structures, created by the above function */
  static void amdgpu_dm_destroy_drm_device(struct amdgpu_display_manager *dm);
@@ -21,8 +21,8 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  	 * final state without repeating the dump for each connector.
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-09-08 21:38:53.717737709 +0100
-@@ -2236,10 +2236,128 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-09-09 22:38:52.716477613 +0100
+@@ -2236,10 +2236,126 @@
  		break;
  	}
  
@@ -48,7 +48,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
 +	       (connector->tile_h_loc || connector->tile_v_loc);
 +}
 +
-+bool
++static bool
 +amdgpu_dm_mode_matches_tile_size(const struct drm_connector *connector,
 +				 const struct drm_display_mode *mode)
 +{
@@ -109,7 +109,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
 +			secondary = aconnector;
 +	}
 +	drm_connector_list_iter_end(&iter);
-+
++	
 +	if (!primary || !secondary) {
 +		return;
 +	}
@@ -134,11 +134,9 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
 +	dm_helpers_read_local_edid(primary_link->ctx, primary_link, sink);
 +	mutex_unlock(&dm->dc_lock);
 +
-+	/* Keep aconnector->drm_edid (the cache consumed by get_modes) coherent
-+	 * with the freshly-read sink EDID. */
++	/* Keep aconnector->drm_edid coherent with the freshly-read sink EDID */
 +	if (sink->dc_edid.length) {
-+		const struct edid *edid =
-+			(const struct edid *)sink->dc_edid.raw_edid;
++		const struct edid *edid = (const struct edid *)sink->dc_edid.raw_edid;
 +
 +		drm_edid_free(primary->drm_edid);
 +		primary->drm_edid = drm_edid_alloc(edid, sink->dc_edid.length);
@@ -146,13 +144,13 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
 +		drm_edid_connector_update(&primary->base, primary->drm_edid);
 +		mutex_unlock(&dev->mode_config.mutex);
 +	}
-+
++	
 +}
 +
  struct dc_stream_state *
  amdgpu_dm_create_validate_stream_for_sink(struct drm_connector *connector,
  					  const struct drm_display_mode *drm_mode,
-@@ -2432,7 +2550,7 @@
+@@ -2432,7 +2548,7 @@
  
  			if (dc_result == DC_OK)
  				dc_result = dm_validate_stream_color_format(drm_state, stream);
@@ -161,7 +159,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  			if (dc_result == DC_OK)
  				return stream;
  
-@@ -2474,6 +2592,16 @@
+@@ -2474,6 +2590,16 @@
  			(mode->flags & DRM_MODE_FLAG_DBLSCAN))
  		return result;
  
@@ -178,7 +176,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  	/*
  	 * Only run this the first time mode_valid is called to initilialize
  	 * EDID mgmt
-@@ -2503,6 +2631,9 @@
+@@ -2503,6 +2629,9 @@
  	if (stream) {
  		dc_stream_release(stream);
  		result = MODE_OK;
@@ -188,7 +186,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  	}
  
  fail:
-@@ -3117,6 +3248,9 @@
+@@ -3117,6 +3246,9 @@
  			amdgpu_dm_connector_add_common_modes(encoder, connector);
  		amdgpu_dm_connector_add_freesync_modes(connector, drm_edid);
  	}
@@ -364,7 +362,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  /**
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-09-08 22:11:26.921397121 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-09-09 22:40:35.332572366 +0100
 @@ -48,9 +48,12 @@
  #include "link_enc_cfg.h"
  #include "dm_helpers.h"
@@ -378,13 +376,12 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  
  #define DC_LOGGER \
  	link->ctx->logger
-@@ -105,6 +108,73 @@
+@@ -105,6 +108,72 @@
  	return transaction_type;
  }
  
 +static enum dc_status tiled_root_write_panel_wake(struct dc_link *link)
 +{
-+	enum dc_status status;
 +
 +	if (!dc_link_is_apple_5k_root(link) ||
 +	    !link->ddc || !link->local_sink)
@@ -452,7 +449,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  static enum signal_type get_basic_signal_type(struct graphics_object_id encoder,
  					      struct graphics_object_id downstream)
  {
-@@ -626,6 +696,9 @@
+@@ -626,6 +695,9 @@
  	struct audio_support *audio_support = &link->dc->res_pool->audio_support;
  
  	sink_caps->signal = link_detect_sink_signal_type(link, reason);
@@ -462,7 +459,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  	sink_caps->transaction_type =
  		get_ddc_transaction_type(sink_caps->signal);
  
-@@ -968,6 +1041,14 @@
+@@ -968,6 +1040,14 @@
  				(link->ep_type == DISPLAY_ENDPOINT_USB4_DPIA &&
  				!link->dc->config.enable_dpia_pre_training)) {
  			destrictive = false;
@@ -477,7 +474,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  		} else if (link_dp_get_encoding_format(&max_link_cap) ==
  				DP_8b_10b_ENCODING) {
  			if (link->dpcd_caps.is_mst_capable ||
-@@ -1140,6 +1221,16 @@
+@@ -1140,6 +1220,16 @@
  		return false;
  	}
  
@@ -622,8 +619,8 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  void dpcd_write_cable_id_to_dprx(struct dc_link *link)
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c	2026-09-08 22:08:14.126400097 +0100
-@@ -249,3 +249,16 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c	2026-09-09 22:13:26.702609422 +0100
+@@ -249,3 +249,14 @@
  	}
  	return status;
  }
@@ -632,13 +629,11 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
 +
 +enum dc_status link_apple_5k_root_panel_latch_pulse(struct dc_link *root_link)
 +{
-+	uint8_t payload = 1;
++  	if (!dc_link_is_apple_5k_root(root_link))
++  		return DC_OK;
 +
-+	if (!dc_link_is_apple_5k_root(root_link))
-+		return DC_OK;
-+
-+	return core_link_write_dpcd(root_link, APPLE_5K_DPCD_ROOT_PANEL_LATCH,
-+				    &payload, sizeof(payload));
++  	return core_link_write_dpcd(root_link, APPLE_5K_DPCD_ROOT_PANEL_LATCH,
++  				    &(uint8_t){1}, 1);
 +}
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h	2026-08-30 21:34:40.000000000 +0100
@@ -652,8 +647,8 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  #endif
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c	2026-09-08 22:13:37.390130332 +0100
-@@ -1091,12 +1091,65 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c	2026-09-09 22:55:57.125505854 +0100
+@@ -1091,6 +1091,53 @@
  	return status;
  }
  
@@ -707,129 +702,17 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  enum dc_status dpcd_set_link_settings(
  	struct dc_link *link,
  	const struct link_training_settings *lt_settings)
- {
--	uint8_t rate;
-+	uint8_t rate = 0;
- 	enum dc_status status;
-+	bool retry_dpcd_writes = dc_link_is_apple_5k_slave(link);
-+	unsigned int retry = 0;
-+	enum dc_status ds_status = DC_OK;
-+	enum dc_status lc_status = DC_OK;
-+	enum dc_status bw_status = DC_OK;
-+	enum dc_status rate_status = DC_OK;
+@@ -1100,6 +1147,9 @@
  
  	union down_spread_ctrl downspread = {0};
  	union lane_count_set lane_count_set = {0};
-@@ -1117,43 +1170,77 @@
- 				link->dpcd_caps.max_ln_count.bits.POST_LT_ADJ_REQ_SUPPORTED;
- 	}
++	
++	if (!dp_prepare_sink_for_link_training(link, 1))
++		return DC_ERROR_UNEXPECTED;
  
--	status = core_link_write_dpcd(link, DP_DOWNSPREAD_CTRL,
--		&downspread.raw, sizeof(downspread));
--	if (status != DC_OK)
--		DC_LOG_ERROR("%s:%d: core_link_write_dpcd (DP_DOWNSPREAD_CTRL) failed\n", __func__, __LINE__);
--
--	status = core_link_write_dpcd(link, DP_LANE_COUNT_SET,
--		&lane_count_set.raw, 1);
--	if (status != DC_OK)
--		DC_LOG_ERROR("%s:%d: core_link_write_dpcd (DP_LANE_COUNT_SET) failed\n", __func__, __LINE__);
--
--	if (link->dpcd_caps.dpcd_rev.raw >= DPCD_REV_13 &&
--			lt_settings->link_settings.use_link_rate_set == true) {
--		rate = 0;
--		/* WA for some MUX chips that will power down with eDP and lose supported
--		 * link rate set for eDP 1.4. Source reads DPCD 0x010 again to ensure
--		 * MUX chip gets link rate set back before link training.
--		 */
--		if (link->connector_signal == SIGNAL_TYPE_EDP) {
--			uint8_t supported_link_rates[16] = {0};
-+	/*
-+	 * Keep retryable link-config writes tied to observed sink AUX readiness
-+	 * instead of a fixed wake delay.
-+	 */
- 
--			core_link_read_dpcd(link, DP_SUPPORTED_LINK_RATES,
--					supported_link_rates, sizeof(supported_link_rates));
-+	while (true) {
-+		if (retry_dpcd_writes &&
-+		    !dp_prepare_sink_for_link_training(link, 1)) {
-+			status = DC_ERROR_UNEXPECTED;
-+			goto dpcd_write_retry;
- 		}
--		status = core_link_write_dpcd(link, DP_LINK_BW_SET, &rate, 1);
--		if (status != DC_OK)
--			DC_LOG_ERROR("%s:%d: core_link_write_dpcd (DP_LINK_BW_SET) failed\n", __func__, __LINE__);
- 
--		status = core_link_write_dpcd(link, DP_LINK_RATE_SET,
--				&lt_settings->link_settings.link_rate_set, 1);
-+		rate_status = DC_OK;
-+
-+		ds_status = core_link_write_dpcd(link, DP_DOWNSPREAD_CTRL,
-+			&downspread.raw, sizeof(downspread));
-+		status = ds_status;
- 		if (status != DC_OK)
--			DC_LOG_ERROR("%s:%d: core_link_write_dpcd (DP_LINK_RATE_SET) failed\n", __func__, __LINE__);
--	} else {
--		rate = get_dpcd_link_rate(&lt_settings->link_settings);
-+			DC_LOG_ERROR("%s:%d: core_link_write_dpcd (DP_DOWNSPREAD_CTRL) failed\n", __func__, __LINE__);
- 
--		status = core_link_write_dpcd(link, DP_LINK_BW_SET, &rate, 1);
-+		lc_status = core_link_write_dpcd(link, DP_LANE_COUNT_SET,
-+			&lane_count_set.raw, 1);
-+		status = lc_status;
- 		if (status != DC_OK)
--			DC_LOG_ERROR("%s:%d: core_link_write_dpcd (DP_LINK_BW_SET) failed\n", __func__, __LINE__);
-+			DC_LOG_ERROR("%s:%d: core_link_write_dpcd (DP_LANE_COUNT_SET) failed\n", __func__, __LINE__);
-+
-+		if (link->dpcd_caps.dpcd_rev.raw >= DPCD_REV_13 &&
-+				lt_settings->link_settings.use_link_rate_set == true) {
-+			rate = 0;
-+			/* WA for some MUX chips that will power down with eDP and lose supported
-+			 * link rate set for eDP 1.4. Source reads DPCD 0x010 again to ensure
-+			 * MUX chip gets link rate set back before link training.
-+			 */
-+			if (link->connector_signal == SIGNAL_TYPE_EDP) {
-+				uint8_t supported_link_rates[16] = {0};
-+
-+				core_link_read_dpcd(link, DP_SUPPORTED_LINK_RATES,
-+						supported_link_rates, sizeof(supported_link_rates));
-+			}
-+			bw_status = core_link_write_dpcd(link, DP_LINK_BW_SET, &rate, 1);
-+			status = bw_status;
-+			if (status != DC_OK)
-+				DC_LOG_ERROR("%s:%d: core_link_write_dpcd (DP_LINK_BW_SET) failed\n", __func__, __LINE__);
-+
-+			status = core_link_write_dpcd(link, DP_LINK_RATE_SET,
-+					&lt_settings->link_settings.link_rate_set, 1);
-+			rate_status = status;
-+			if (status != DC_OK)
-+				DC_LOG_ERROR("%s:%d: core_link_write_dpcd (DP_LINK_RATE_SET) failed\n", __func__, __LINE__);
-+		} else {
-+			rate = get_dpcd_link_rate(&lt_settings->link_settings);
-+
-+			bw_status = core_link_write_dpcd(link, DP_LINK_BW_SET, &rate, 1);
-+			status = bw_status;
-+			if (status != DC_OK)
-+				DC_LOG_ERROR("%s:%d: core_link_write_dpcd (DP_LINK_BW_SET) failed\n", __func__, __LINE__);
-+		}
-+
-+		if (!retry_dpcd_writes)
-+			break;
-+
-+		if (ds_status == DC_OK && lc_status == DC_OK &&
-+		    bw_status == DC_OK && rate_status == DC_OK)
-+			break;
-+
-+dpcd_write_retry:
-+		if (retry >= DP_LT_DPCD_WRITE_RETRIES)
-+			break;
-+
-+		fsleep(DP_LT_AUX_READY_COOLDOWN_US);
-+		retry++;
- 	}
- 
- 	if (rate) {
-@@ -1671,6 +1758,14 @@
+ 	downspread.raw = (uint8_t)
+ 	(lt_settings->link_settings.link_spread);
+@@ -1671,6 +1721,14 @@
  			msleep(delay_dp_power_up_in_ms);
  		}
  
@@ -844,7 +727,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  		edp_set_panel_assr(link, pipe_ctx, &panel_mode, true);
  
  		dp_set_panel_mode(link, panel_mode);
-@@ -1735,6 +1830,7 @@
+@@ -1735,6 +1793,7 @@
  				cur_link_settings.link_spread, status);
  		}
  
@@ -852,7 +735,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  		fail_count++;
  		dp_trace_lt_fail_count_update(link, fail_count, false);
  		if (link->ep_type == DISPLAY_ENDPOINT_PHY) {
-@@ -1815,4 +1911,3 @@
+@@ -1815,4 +1874,3 @@
  
  	return false;
  }
