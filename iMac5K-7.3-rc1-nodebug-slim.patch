@@ -1,6 +1,6 @@
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-09-08 23:06:25.933520321 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-09-10 22:03:14.072327663 +0100
 @@ -141,6 +141,8 @@
  /* removes and deallocates the drm structures, created by the above function */
  static void amdgpu_dm_destroy_drm_device(struct amdgpu_display_manager *dm);
@@ -21,31 +21,19 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  	 * final state without repeating the dump for each connector.
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-09-09 22:38:52.716477613 +0100
-@@ -2236,10 +2236,126 @@
- 		break;
- 	}
- 
--	return encoding == stream->timing.pixel_encoding ?
-+return encoding == stream->timing.pixel_encoding ?
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-09-11 00:29:20.894404566 +0100
+@@ -2240,6 +2240,108 @@
  		DC_OK : DC_UNSUPPORTED_VALUE;
  }
  
 +static bool
-+amdgpu_dm_connector_is_tiled_slave_tile(
-+		const struct amdgpu_dm_connector *aconnector)
++amdgpu_dm_connector_is_tiled_slave_tile(const struct amdgpu_dm_connector *aconnector)
 +{
-+	const struct drm_connector *connector;
++	const struct drm_connector *c = aconnector ? &aconnector->base : NULL;
 +
-+	if (!aconnector || !dc_link_is_apple_5k_slave(aconnector->dc_link))
-+		return false;
-+
-+	connector = &aconnector->base;
-+	if (!connector->has_tile)
-+		return false;
-+
-+	return connector->tile_h_size && connector->tile_v_size &&
-+	       (connector->tile_h_loc || connector->tile_v_loc);
++	return c && c->has_tile && c->tile_h_size && c->tile_v_size &&
++	       (c->tile_h_loc || c->tile_v_loc) &&
++	       dc_link_is_apple_5k_slave(aconnector->dc_link);
 +}
 +
 +static bool
@@ -71,8 +59,9 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
 +	struct amdgpu_dm_connector *aconnector = to_amdgpu_dm_connector(connector);
 +	struct drm_display_mode *mode;
 +
-+	if (!aconnector || (!dc_link_is_apple_5k_root(aconnector->dc_link) &&
-+			    !dc_link_is_apple_5k_slave(aconnector->dc_link)))
++	if (!connector->has_tile || !aconnector ||
++	    (!dc_link_is_apple_5k_root(aconnector->dc_link) &&
++	     !dc_link_is_apple_5k_slave(aconnector->dc_link)))
 +		return;
 +
 +	list_for_each_entry(mode, &connector->probed_modes, head) {
@@ -83,8 +72,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
 +	}
 +}
 +
-+void
-+amdgpu_dm_reprobe_tiled_root_after_slave(struct amdgpu_device *adev)
++void amdgpu_dm_reprobe_tiled_root_after_slave(struct amdgpu_device *adev)
 +{
 +	struct drm_device *dev = adev_to_drm(adev);
 +	struct amdgpu_display_manager *dm = &adev->dm;
@@ -92,7 +80,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
 +	struct drm_connector *connector;
 +	struct amdgpu_dm_connector *primary = NULL;
 +	struct amdgpu_dm_connector *secondary = NULL;
-+	struct dc_link *primary_link;
++	struct dc_link *link;
 +	struct dc_sink *sink;
 +
 +	drm_connector_list_iter_begin(dev, &iter);
@@ -109,32 +97,26 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
 +			secondary = aconnector;
 +	}
 +	drm_connector_list_iter_end(&iter);
-+	
-+	if (!primary || !secondary) {
-+		return;
-+	}
 +
-+	/* Re-read only after the slave exposes tile metadata. */
-+	if (!amdgpu_dm_connector_is_tiled_slave_tile(secondary)) {
++	/* Both connectors must exist and secondary tile metadata must already be valid */
++	if (!primary || !secondary || !amdgpu_dm_connector_is_tiled_slave_tile(secondary))
 +		return;
-+	}
 +
-+	primary_link = primary->dc_link;
-+	if (!primary_link || !primary_link->local_sink) {
++	/* Early exit: avoid acquiring locks or reading DDC if root already has tile info */
++	if (primary->base.has_tile)
 +		return;
-+	}
-+	sink = primary_link->local_sink;
 +
-+	if (primary->base.has_tile) {
++	link = primary->dc_link;
++	sink = link ? link->local_sink : NULL;
++	if (!sink)
 +		return;
-+	}
 +
 +	mutex_lock(&dm->dc_lock);
 +	dc_exit_ips_for_hw_access(dm->dc);
-+	dm_helpers_read_local_edid(primary_link->ctx, primary_link, sink);
++	dm_helpers_read_local_edid(link->ctx, link, sink);
 +	mutex_unlock(&dm->dc_lock);
 +
-+	/* Keep aconnector->drm_edid coherent with the freshly-read sink EDID */
++	/* Synchronize DRM connector EDID representation with the updated DC sink EDID */
 +	if (sink->dc_edid.length) {
 +		const struct edid *edid = (const struct edid *)sink->dc_edid.raw_edid;
 +
@@ -144,13 +126,12 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
 +		drm_edid_connector_update(&primary->base, primary->drm_edid);
 +		mutex_unlock(&dev->mode_config.mutex);
 +	}
-+	
 +}
 +
  struct dc_stream_state *
  amdgpu_dm_create_validate_stream_for_sink(struct drm_connector *connector,
  					  const struct drm_display_mode *drm_mode,
-@@ -2432,7 +2548,7 @@
+@@ -2432,7 +2534,7 @@
  
  			if (dc_result == DC_OK)
  				dc_result = dm_validate_stream_color_format(drm_state, stream);
@@ -159,7 +140,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  			if (dc_result == DC_OK)
  				return stream;
  
-@@ -2474,6 +2590,16 @@
+@@ -2474,6 +2576,11 @@
  			(mode->flags & DRM_MODE_FLAG_DBLSCAN))
  		return result;
  
@@ -168,15 +149,10 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
 +		return MODE_PANEL;
 +	}
 +
-+	/*
-+	 * Only run this the first time mode_valid is called to initilialize
-+	 * EDID mgmt
-+	 */
-+
  	/*
  	 * Only run this the first time mode_valid is called to initilialize
  	 * EDID mgmt
-@@ -2503,6 +2629,9 @@
+@@ -2503,6 +2610,9 @@
  	if (stream) {
  		dc_stream_release(stream);
  		result = MODE_OK;
@@ -186,25 +162,24 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  	}
  
  fail:
-@@ -3117,6 +3246,9 @@
+@@ -3117,6 +3227,10 @@
  			amdgpu_dm_connector_add_common_modes(encoder, connector);
  		amdgpu_dm_connector_add_freesync_modes(connector, drm_edid);
  	}
 +
-+	amdgpu_dm_make_tile_mode_preferred(connector);
++	if (amdgpu_dm_connector->num_modes)
++		amdgpu_dm_make_tile_mode_preferred(connector);
 +
  	amdgpu_dm_fbc_init(connector);
  
  	return amdgpu_dm_connector->num_modes;
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-09-07 23:07:04.043394857 +0100
-@@ -97,12 +97,57 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-09-10 22:31:55.279150996 +0100
+@@ -97,8 +97,53 @@
  }
  EXPORT_IF_KUNIT(edid_extract_panel_id);
  
--STATIC_IFN_KUNIT void apply_edid_quirks(struct dc_link *link, struct edid *edid,
--			      struct dc_edid_caps *edid_caps)
 +/*
 + * Called from dm_helpers_parse_edid_caps() after apply_edid_quirks() has
 + * (possibly) set the tiled_root_* / tiled_slave_* flags on this link's
@@ -249,17 +224,12 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
 +	}
 +}
 +
-+STATIC_IFN_KUNIT void apply_edid_quirks(struct dc_link *link,
-+				      struct edid *edid,
-+				      struct dc_edid_caps *edid_caps)
+ STATIC_IFN_KUNIT void apply_edid_quirks(struct dc_link *link, struct edid *edid,
+ 			      struct dc_edid_caps *edid_caps)
++
  {
  	struct amdgpu_dm_connector *aconnector = link->priv;
  	struct drm_device *dev = aconnector->base.dev;
--	uint32_t panel_id = edid_extract_panel_id(edid);
-+ 	uint32_t panel_id = edid_extract_panel_id(edid);
- 
- 	switch (panel_id) {
- 	/* Workaround for monitors that need a delay after detecting the link */
 @@ -147,6 +192,33 @@
  		drm_dbg_driver(dev, "Hiding secondary tile on panel id %X\n", panel_id);
  		edid_caps->panel_patch.disable_second_tile = true;
@@ -312,7 +282,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  		union test_response test_response = {0};
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc.h linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc.h
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc.h	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc.h	2026-09-08 22:06:30.107523673 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc.h	2026-09-10 22:03:14.074349764 +0100
 @@ -1990,6 +1990,13 @@
  	bool skip_implict_edp_power_control;
  	bool forced_psr_active;
@@ -351,7 +321,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  	struct dc_link *link;
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc_types.h linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc_types.h
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc_types.h	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc_types.h	2026-09-07 22:18:51.918117773 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc_types.h	2026-09-10 22:03:14.074883516 +0100
 @@ -194,6 +194,7 @@
  	bool oled_optimize_display_on;
  	unsigned int force_mst_blocked_discovery;
@@ -362,8 +332,8 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  /**
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-09-09 22:40:35.332572366 +0100
-@@ -48,9 +48,12 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-09-11 00:24:53.865322984 +0100
+@@ -48,6 +48,7 @@
  #include "link_enc_cfg.h"
  #include "dm_helpers.h"
  #include "clk_mgr.h"
@@ -371,28 +341,23 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  
   // Offset DPCD 050Eh == 0x5A
  #define MST_HUB_ID_0x5A  0x5A
-+#define TILED_SLAVE_AUX_WAKE_TIMEOUT_MS 300
-+#define TILED_SLAVE_AUX_WAKE_POLL_MS 30
- 
- #define DC_LOGGER \
- 	link->ctx->logger
-@@ -105,6 +108,72 @@
+@@ -105,6 +106,71 @@
  	return transaction_type;
  }
  
 +static enum dc_status tiled_root_write_panel_wake(struct dc_link *link)
 +{
-+
-+	if (!dc_link_is_apple_5k_root(link) ||
-+	    !link->ddc || !link->local_sink)
++	if (!dc_link_is_apple_5k_root(link) || !link->ddc || !link->local_sink)
 +		return DC_OK;
 +
-+	/* Detection-time only: force the DDC into AUX mode before the latch
-+	 * pulse. Unlike the secondary's pre-detect AUX poll, we don't restore
-+	 * the prior transaction type here -- DC expects the root to stay in
-+	 * AUX mode for subsequent reads. */
-+	set_ddc_transaction_type(link->ddc, DDC_TRANSACTION_TYPE_I2C_OVER_AUX);
-+	link->aux_mode = link_is_in_aux_transaction_mode(link->ddc);
++	/*
++	 * Detection-time only: ensure DDC is in AUX mode before pulsing the latch.
++	 * Avoid redundant hardware register writes if already configured.
++	 */
++	if (!link->aux_mode) {
++		set_ddc_transaction_type(link->ddc, DDC_TRANSACTION_TYPE_I2C_OVER_AUX);
++		link->aux_mode = link_is_in_aux_transaction_mode(link->ddc);
++	}
 +
 +	return link_apple_5k_root_panel_latch_pulse(link);
 +}
@@ -425,19 +390,18 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
 +	if (root_link)
 +		tiled_root_write_panel_wake(root_link);
 +
-+	for (elapsed_ms = 0; ; elapsed_ms += TILED_SLAVE_AUX_WAKE_POLL_MS) {
++	for (elapsed_ms = 0; ; elapsed_ms += 5) {
 +		dpcd_rev = 0;
 +		status = core_link_read_dpcd(link, DP_DPCD_REV,
 +					    &dpcd_rev, sizeof(dpcd_rev));
 +
-+		if (status == DC_OK && dpcd_rev != 0) {
++		if (status == DC_OK && dpcd_rev != 0)
 +			return true;
-+		}
 +
-+		if (elapsed_ms >= TILED_SLAVE_AUX_WAKE_TIMEOUT_MS)
++		if (elapsed_ms >= 150) /* TILED_SLAVE_AUX_WAKE_TIMEOUT_MS */
 +			break;
 +
-+		msleep(TILED_SLAVE_AUX_WAKE_POLL_MS);
++		fsleep(5000); /* TILED_SLAVE_AUX_WAKE_POLL_MS */
 +	}
 +
 +	set_ddc_transaction_type(link->ddc, old_transaction_type);
@@ -449,7 +413,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  static enum signal_type get_basic_signal_type(struct graphics_object_id encoder,
  					      struct graphics_object_id downstream)
  {
-@@ -626,6 +695,9 @@
+@@ -626,6 +692,9 @@
  	struct audio_support *audio_support = &link->dc->res_pool->audio_support;
  
  	sink_caps->signal = link_detect_sink_signal_type(link, reason);
@@ -459,7 +423,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  	sink_caps->transaction_type =
  		get_ddc_transaction_type(sink_caps->signal);
  
-@@ -968,6 +1040,14 @@
+@@ -968,6 +1037,14 @@
  				(link->ep_type == DISPLAY_ENDPOINT_USB4_DPIA &&
  				!link->dc->config.enable_dpia_pre_training)) {
  			destrictive = false;
@@ -474,7 +438,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  		} else if (link_dp_get_encoding_format(&max_link_cap) ==
  				DP_8b_10b_ENCODING) {
  			if (link->dpcd_caps.is_mst_capable ||
-@@ -1140,6 +1220,16 @@
+@@ -1140,6 +1217,16 @@
  		return false;
  	}
  
@@ -493,8 +457,8 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  		dc_sink_retain(prev_sink);
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_dpms.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_dpms.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_dpms.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_dpms.c	2026-09-08 22:12:09.665982091 +0100
-@@ -79,6 +79,23 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_dpms.c	2026-09-10 22:40:35.705300105 +0100
+@@ -79,6 +79,16 @@
  #define MAX_MTP_SLOT_COUNT 64
  #define LINK_TRAINING_ATTEMPTS 4
  #define PEAK_FACTOR_X1000 1006
@@ -502,23 +466,16 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
 +
 +static void dp_write_tiled_stream_enable_latch(struct dc_link *link)
 +{
-+    struct dc_link *root_link;
-+    uint8_t payload = 1;
++	if (!dc_link_is_apple_5k_slave(link) || !link->local_sink)
++		return;
 +
-+    if (!dc_link_is_apple_5k_slave(link) || !link->local_sink)
-+        return;
-+
-+    root_link = link->tiled_peer;
-+    if (dc_link_is_apple_5k_root(root_link))
-+        link_apple_5k_root_panel_latch_pulse(root_link);
-+
-+    core_link_write_dpcd(link, APPLE_5K_DPCD_PANEL_LATCH,
-+                         &payload, sizeof(payload));
++	link_apple_5k_root_panel_latch_pulse(link->tiled_peer);
++	core_link_write_dpcd(link, APPLE_5K_DPCD_PANEL_LATCH, &(uint8_t){1}, 1);
 +}
  
  void link_blank_all_dp_displays(struct dc *dc)
  {
-@@ -1023,6 +1040,7 @@
+@@ -1023,6 +1033,7 @@
  				&new_downspread.raw, sizeof(new_downspread));
  		}
  
@@ -528,87 +485,22 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  	}
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c	2026-09-08 22:12:52.706564188 +0100
-@@ -56,6 +56,9 @@
- #define DC_LOGGER \
- 	link->ctx->logger
- 
-+#define DP_SOURCE_DPCD_AUX_READY_ATTEMPTS 3
-+#define DP_SOURCE_DPCD_AUX_READY_COOLDOWN_US 1000
-+
- #ifndef MAX
- #define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
- #endif
-@@ -63,6 +66,58 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c	2026-09-10 22:50:32.358323707 +0100
+@@ -63,6 +63,13 @@
  #define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
  #endif
  
-+static void dpcd_set_tiled_slave_source_table_revision(
-+	struct dc_link *link)
++static void dpcd_set_tiled_slave_source_table_revision(struct dc_link *link)
 +{
-+	uint8_t table_revision[3];
-+
-+	if (!dc_link_is_apple_5k_slave(link) ||
-+	    !link->ctx || !link->dc)
-+		return;
-+
-+	table_revision[0] = 0x04;
-+	table_revision[1] = 0x1d;
-+	table_revision[2] = 0x03;
-+
-+	core_link_write_dpcd(link, DP_SOURCE_TABLE_REVISION,
-+			     table_revision, sizeof(table_revision));
-+}
-+
-+static bool dp_prepare_source_dpcd_write(struct dc_link *link)
-+{
-+	uint8_t dpcd_rev;
-+	uint8_t power_state = DP_POWER_STATE_D0;
-+	unsigned int try;
-+
-+	if (!dc_link_is_apple_5k_slave(link))
-+		return true;
-+
-+	for (try = 0; try < DP_SOURCE_DPCD_AUX_READY_ATTEMPTS; try++) {
-+		enum dc_status power_status;
-+		enum dc_status rev_status;
-+
-+		link_apple_5k_root_panel_latch_pulse(link->tiled_peer);
-+
-+		power_status = core_link_write_dpcd(link, DP_SET_POWER,
-+						    &power_state,
-+						    sizeof(power_state));
-+		if (power_status != DC_OK)
-+			goto retry;
-+
-+		dpcd_rev = 0;
-+		rev_status = core_link_read_dpcd(link, DP_DPCD_REV,
-+						 &dpcd_rev, sizeof(dpcd_rev));
-+		if (rev_status == DC_OK && dpcd_rev != 0)
-+			return true;
-+
-+retry:
-+		if (try + 1 < DP_SOURCE_DPCD_AUX_READY_ATTEMPTS)
-+			fsleep(DP_SOURCE_DPCD_AUX_READY_COOLDOWN_US);
-+	}
-+
-+	return false;
++	if (dc_link_is_apple_5k_slave(link))
++		core_link_write_dpcd(link, DP_SOURCE_TABLE_REVISION,
++				     (const uint8_t[]){0x04, 0x1d, 0x03}, 3);
 +}
 +
  struct dp_lt_fallback_entry {
  	enum dc_lane_count lane_count;
  	enum dc_link_rate link_rate;
-@@ -1416,6 +1471,9 @@
- 
- void dpcd_set_source_specific_data(struct dc_link *link)
- {
-+	if (!dp_prepare_source_dpcd_write(link))
-+		return;
-+
- 	if (!link->dc->vendor_signature.is_valid) {
- 		enum dc_status __maybe_unused result_write_min_hblank = DC_NOT_SUPPORTED;
- 		struct dpcd_amd_signature amd_signature = {0};
-@@ -1495,6 +1553,8 @@
+@@ -1495,6 +1502,8 @@
  				link->dc->vendor_signature.data.raw,
  				sizeof(link->dc->vendor_signature.data.raw));
  	}
@@ -619,8 +511,8 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  void dpcd_write_cable_id_to_dprx(struct dc_link *link)
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c	2026-09-09 22:13:26.702609422 +0100
-@@ -249,3 +249,14 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c	2026-09-10 23:05:19.306222401 +0100
+@@ -249,3 +249,11 @@
  	}
  	return status;
  }
@@ -629,15 +521,12 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
 +
 +enum dc_status link_apple_5k_root_panel_latch_pulse(struct dc_link *root_link)
 +{
-+  	if (!dc_link_is_apple_5k_root(root_link))
-+  		return DC_OK;
-+
-+  	return core_link_write_dpcd(root_link, APPLE_5K_DPCD_ROOT_PANEL_LATCH,
-+  				    &(uint8_t){1}, 1);
++	return dc_link_is_apple_5k_root(root_link) ?
++		core_link_write_dpcd(root_link, APPLE_5K_DPCD_ROOT_PANEL_LATCH, &(uint8_t){1}, 1) : DC_OK;
 +}
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h	2026-09-08 22:08:35.429622147 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h	2026-09-10 22:03:14.076629986 +0100
 @@ -39,4 +39,6 @@
  		uint32_t address,
  		const uint8_t *data,
@@ -647,8 +536,8 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  #endif
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c	2026-09-09 22:55:57.125505854 +0100
-@@ -1091,6 +1091,53 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c	2026-09-11 00:44:10.150574689 +0100
+@@ -1091,6 +1091,52 @@
  	return status;
  }
  
@@ -658,42 +547,41 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
 + * on an observed AUX response after any panel-specific pre-training wake.
 + */
 +#define DP_LT_AUX_READY_ATTEMPTS           3
-+#define DP_LT_AUX_READY_COOLDOWN_US        1000
-+#define DP_LT_DPCD_WRITE_RETRIES           4
 +
 +static bool dp_prepare_sink_for_link_training(struct dc_link *link,
 +					      unsigned int attempts)
 +{
-+	uint8_t dpcd_rev;
 +	uint8_t power_state = DP_POWER_STATE_D0;
++	uint8_t dpcd_rev = 0;
 +	unsigned int try;
 +
 +	if (!link || link->aux_access_disabled ||
 +	    !dc_link_is_apple_5k_slave(link))
 +		return true;
 +
-+	for (try = 0; try < attempts; try++) {
-+		enum dc_status power_status;
-+		enum dc_status rev_status;
-+		
-+		link_apple_5k_root_panel_latch_pulse(link->tiled_peer);
++	/*
++	 * Fast path: if the slave AUX is already awake and responsive,
++	 * skip pulsing the root latch and return immediately.
++	 */
++	if (core_link_read_dpcd(link, DP_DPCD_REV, &dpcd_rev, sizeof(dpcd_rev)) == DC_OK &&
++	    dpcd_rev != 0)
++		return true;
 +
-+		power_status = core_link_write_dpcd(link, DP_SET_POWER,
-+						    &power_state,
-+						    sizeof(power_state));
-+		if (power_status != DC_OK) {
-+			goto retry;
++	/* Slave is asleep: pulse root latch once to wake secondary TCON rail */
++	link_apple_5k_root_panel_latch_pulse(link->tiled_peer);
++
++	for (try = 0; try < attempts; try++) {
++		if (core_link_write_dpcd(link, DP_SET_POWER,
++					 &power_state, sizeof(power_state)) == DC_OK) {
++			dpcd_rev = 0;
++			if (core_link_read_dpcd(link, DP_DPCD_REV,
++						&dpcd_rev, sizeof(dpcd_rev)) == DC_OK &&
++			    dpcd_rev != 0)
++				return true;
 +		}
 +
-+		dpcd_rev = 0;
-+		rev_status = core_link_read_dpcd(link, DP_DPCD_REV,
-+						 &dpcd_rev, sizeof(dpcd_rev));
-+		if (rev_status == DC_OK && dpcd_rev != 0)
-+			return true;
-+
-+retry:
 +		if (try + 1 < attempts)
-+			fsleep(DP_LT_AUX_READY_COOLDOWN_US);
++			fsleep(1000); /* 1 ms settle backoff */
 +	}
 +
 +	return false;
@@ -702,17 +590,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  enum dc_status dpcd_set_link_settings(
  	struct dc_link *link,
  	const struct link_training_settings *lt_settings)
-@@ -1100,6 +1147,9 @@
- 
- 	union down_spread_ctrl downspread = {0};
- 	union lane_count_set lane_count_set = {0};
-+	
-+	if (!dp_prepare_sink_for_link_training(link, 1))
-+		return DC_ERROR_UNEXPECTED;
- 
- 	downspread.raw = (uint8_t)
- 	(lt_settings->link_settings.link_spread);
-@@ -1671,6 +1721,14 @@
+@@ -1671,6 +1717,14 @@
  			msleep(delay_dp_power_up_in_ms);
  		}
  
@@ -727,7 +605,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  		edp_set_panel_assr(link, pipe_ctx, &panel_mode, true);
  
  		dp_set_panel_mode(link, panel_mode);
-@@ -1735,6 +1793,7 @@
+@@ -1735,6 +1789,7 @@
  				cur_link_settings.link_spread, status);
  		}
  
@@ -735,14 +613,14 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  		fail_count++;
  		dp_trace_lt_fail_count_update(link, fail_count, false);
  		if (link->ep_type == DISPLAY_ENDPOINT_PHY) {
-@@ -1815,4 +1874,3 @@
+@@ -1815,4 +1870,3 @@
  
  	return false;
  }
 -
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c	2026-09-08 22:16:59.924163823 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c	2026-09-10 22:03:14.077246743 +0100
 @@ -28,6 +28,7 @@
   * as PSR and ABM and it also manages specs defined eDP panel power sequences.
   */
