@@ -1,4 +1,3 @@
-# Kernel
 
 Simple script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kernel on iMacs, alongside your existing kernel.
 
@@ -82,10 +81,10 @@ drag the .sh file into a terminal window and press enter
 
 # Other nice things for your iMac
 
--https://github.com/taranovegor/mbpfan (generic install) for Fan Control with EMA smoothing
-(curve = 65:1,72:24,80:31,85:51,90:65,95:83,100:100 and min_fan1_speed = 850 in etc/mbpfan.conf)
--https://github.com/aunetx/blur-my-shell/tree/refactor/unified-blur-backend (clone this branch) for Liquid Glass
--https://github.com/kem-a/kiwi-kemma for making Ubuntu/Gnome feel at home for Mac users
+- https://github.com/taranovegor/mbpfan (generic install) for Fan Control with EMA smoothing
+(curve = 45:3,65:7,74:18,82:32,88:50,94:75,100:100 and min_fan1_speed = 850 in etc/mbpfan.conf)
+- https://github.com/aunetx/blur-my-shell/tree/refactor/unified-blur-backend (clone this branch) for Liquid Glass
+- https://github.com/kem-a/kiwi-kemma for making Ubuntu/Gnome feel at home for Mac users
 
 # Contributions
 
