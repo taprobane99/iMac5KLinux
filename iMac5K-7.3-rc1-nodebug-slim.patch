@@ -468,7 +468,7 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  #endif
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c	2026-09-12 16:36:16.076440042 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c	2026-09-12 17:36:25.446637098 +0100
 @@ -1091,6 +1091,46 @@
  	return status;
  }
@@ -539,11 +539,6 @@ diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--e
  		fail_count++;
  		dp_trace_lt_fail_count_update(link, fail_count, false);
  		if (link->ep_type == DISPLAY_ENDPOINT_PHY) {
-@@ -1815,4 +1864,3 @@
- 
- 	return false;
- }
--
 diff -urN '--exclude=.git' '--exclude=Module.symvers' '--exclude=generated' '--exclude=smb1_*.c' linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c	2026-08-30 21:34:40.000000000 +0100
 +++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c	2026-09-12 13:30:01.437084302 +0100
