@@ -224,7 +224,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.
  	if (sad_count <= 0)
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc.h linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc.h
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc.h	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc.h	2026-09-12 19:38:10.736838128 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc.h	2026-09-12 22:53:09.313993816 +0100
 @@ -1990,6 +1990,13 @@
  	bool skip_implict_edp_power_control;
  	bool forced_psr_active;
@@ -416,38 +416,25 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_dpms.c linux-7.
  	}
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c	2026-09-12 19:38:10.739065818 +0100
-@@ -63,6 +63,13 @@
- #define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
- #endif
- 
-+static void dpcd_set_tiled_slave_source_table_revision(struct dc_link *link)
-+{
-+	if (dc_link_is_apple_5k_slave(link))
-+		core_link_write_dpcd(link, DP_SOURCE_TABLE_REVISION,
-+				     (const uint8_t[]){0x04, 0x1d, 0x03}, 3);
-+}
-+
- struct dp_lt_fallback_entry {
- 	enum dc_lane_count lane_count;
- 	enum dc_link_rate link_rate;
-@@ -1495,6 +1502,8 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c	2026-09-12 22:42:31.774939499 +0100
+@@ -1495,6 +1495,10 @@
  				link->dc->vendor_signature.data.raw,
  				sizeof(link->dc->vendor_signature.data.raw));
  	}
 +
-+	dpcd_set_tiled_slave_source_table_revision(link);
++	if (dc_link_is_apple_5k_slave(link))
++		core_link_write_dpcd(link, DP_SOURCE_TABLE_REVISION,
++				     (const uint8_t[]){0x04, 0x1d, 0x03}, 3);
  }
  
  void dpcd_write_cable_id_to_dprx(struct dc_link *link)
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c	2026-09-12 19:38:10.739547885 +0100
-@@ -249,3 +249,12 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c	2026-09-12 22:53:27.893860049 +0100
+@@ -249,3 +249,11 @@
  	}
  	return status;
  }
-+
 +#define APPLE_5K_DPCD_ROOT_PANEL_LATCH 0x4F1
 +
 +/* Pulse DPCD register 0x4F1 on the root eDP link to wake the panel TCON */
@@ -458,12 +445,11 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.
 +}
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h	2026-09-12 19:38:10.739901178 +0100
-@@ -39,4 +39,6 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h	2026-09-12 22:53:51.374690996 +0100
+@@ -39,4 +39,5 @@
  		uint32_t address,
  		const uint8_t *data,
  		uint32_t size);
-+		
 +enum dc_status link_apple_5k_root_panel_latch_pulse(struct dc_link *root_link);
  #endif
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c
