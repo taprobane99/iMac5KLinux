@@ -72,6 +72,10 @@ Then add this line below `<mode>...</mode>` in `monitors.xml` for the screen mod
 
 Ubuntu/Gnome still uses outline hinting for fonts on HiDPI displays. Some non-GTK apps still apply subpixel-antialiasing, and hinting to fonts on HiDPI displays. This script `iMac5K-FontRenderingFix.sh` fixes those problems.
 
+# Thunderbolt dock usb ports
+
+`pci=assign-busses,hpbussize=0x20,hpiosize=0,hpmmiosize=256M,hpmmioprefsize=2G pcie_aspm=off`
+
 # Running .sh scripts
 
 Right-click>Properties>Executable as Program should be ticked, then
