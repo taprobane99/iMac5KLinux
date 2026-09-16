@@ -24,7 +24,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/amdgpu/amdgpu.h linux-7.3-rc1-patche
  #endif
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-09-14 23:27:39.542714661 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-09-15 23:11:32.752395351 +0100
 @@ -141,6 +141,8 @@
  /* removes and deallocates the drm structures, created by the above function */
  static void amdgpu_dm_destroy_drm_device(struct amdgpu_display_manager *dm);
@@ -43,7 +43,21 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-
  	/* Debug dump: list all DC links and their associated sinks after detection
  	 * is complete for all connectors. This provides a comprehensive view of the
  	 * final state without repeating the dump for each connector.
-@@ -6661,3 +6665,29 @@
+@@ -4980,6 +4984,13 @@
+ 		 * For now it's set to false
+ 		 */
+ 	}
++	
++	/* Flag Apple 5K tile pair so set_master_stream() can genlock CRTCs and prevent seam shear */
++	for (i = 0; i < context->stream_count; i++) {
++		stream = context->streams[i];
++		if (stream && stream->link && stream->link->tiled_peer)
++			stream->triggered_crtc_reset.enabled = true;
++	}
+ 
+ 	set_master_stream(context->streams, context->stream_count);
+ 
+@@ -6661,3 +6672,29 @@
  {
  	// Not yet implemented
  }
@@ -75,7 +89,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-
 +}
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-09-14 23:15:09.498623058 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-09-16 23:49:28.352247992 +0100
 @@ -2240,6 +2240,65 @@
  		DC_OK : DC_UNSUPPORTED_VALUE;
  }
@@ -156,6 +170,24 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connecto
  	/*
  	 * Only run this the first time mode_valid is called to initilialize
  	 * EDID mgmt
+@@ -3450,6 +3516,17 @@
+ 	}
+ 
+ 	connector_type = to_drm_connector_type(link->connector_signal, link->link_id.id);
++	
++	/*
++	 * On Apple iMacs (subsystem vendor 0x106b), the secondary panel tile sits
++	 * on internal DisplayPort link_index 1. Register it as eDP from birth so
++	 * compositors (Mutter/GNOME) classify the combined monitor as built-in
++	 * ("is-builtin: true") and expose the brightness slider.
++	 */
++	if (dm->adev->pdev->subsystem_vendor == 0x106b &&
++	    link->connector_signal == SIGNAL_TYPE_DISPLAY_PORT && link_index == 1) {
++		connector_type = DRM_MODE_CONNECTOR_eDP;
++	}
+ 
+ 	res = drm_connector_init_with_ddc(
+ 			dm->ddev,
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-08-30 21:34:40.000000000 +0100
 +++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-09-12 19:38:10.736168696 +0100
@@ -296,7 +328,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc_types.h linux-7.3-rc1-
  /**
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-09-14 23:36:27.127858741 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-09-15 22:30:21.856503093 +0100
 @@ -105,6 +105,52 @@
  	return transaction_type;
  }
@@ -432,7 +464,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.
  #endif
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c	2026-09-14 23:39:01.528959098 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c	2026-09-15 23:42:01.266805174 +0100
 @@ -1091,6 +1091,48 @@
  	return status;
  }
@@ -463,7 +495,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_tr
 +	link_apple_5k_root_panel_latch_set(link->tiled_peer);
 +	core_link_write_dpcd(link, DP_SET_POWER, &power_state, sizeof(power_state));
 +	
-+	fsleep(10000); /* Allow secondary TCON clock/PLL to settle before AUX DPCD reads */
++	/*fsleep(10000);  Allow secondary TCON clock/PLL to settle before AUX DPCD reads */
 +
 +	for (try = 0; try < attempts; try++) {
 +		dpcd_rev = 0;
