@@ -76,6 +76,8 @@ Ubuntu/Gnome still uses outline hinting for fonts on HiDPI displays. Some non-GT
 
 # Thunderbolt dock usb ports
 
+These kernel parameters allow access to the usb ports/sd card reader/headphone jack on my Belkin Dock Pro (might work for other docks)
+
 `pci=assign-busses,hpbussize=0x20,hpiosize=0,hpmmiosize=256M,hpmmioprefsize=2G pcie_aspm=off`
 
 # Running .sh scripts
