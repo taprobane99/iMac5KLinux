@@ -40,9 +40,11 @@ Script `iMac5K-GRUBParams.sh` to fix the following problems (in order) on a 2015
 
 - R9 M395X GPU power management problem (e.g. Resources app refuses to open)
 - Slow booting (~2 mins)/slow shutdown
-- Max brightness 400 nits instead of 500 nits
+- Max brightness 400 nits instead of 500 nits*
 
 Also, `iMac5K-GRUBFontSize-Ubuntu.sh` fixes tiny text in the GRUB menu.
+
+* there is alternatively a script to fix this using a custom ACPI table instead of a kernel parameter
 
 # Audio
 
