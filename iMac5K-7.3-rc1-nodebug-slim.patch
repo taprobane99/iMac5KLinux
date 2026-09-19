@@ -24,7 +24,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/amdgpu/amdgpu.h linux-7.3-rc1-patche
  #endif
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-09-17 18:59:07.875871847 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-09-17 21:08:50.269865521 +0100
 @@ -141,6 +141,8 @@
  /* removes and deallocates the drm structures, created by the above function */
  static void amdgpu_dm_destroy_drm_device(struct amdgpu_display_manager *dm);
@@ -43,21 +43,22 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-
  	/* Debug dump: list all DC links and their associated sinks after detection
  	 * is complete for all connectors. This provides a comprehensive view of the
  	 * final state without repeating the dump for each connector.
-@@ -4980,6 +4984,13 @@
+@@ -4980,6 +4984,14 @@
  		 * For now it's set to false
  		 */
  	}
 +	
-+	/* Flag Apple 5K tile pair so set_master_stream() can genlock CRTCs and prevent seam shear */
++	/* Flag Apple 5K tile pair so set_master_stream() can genlock CRTCs and prevent tearing */
 +	for (i = 0; i < context->stream_count; i++) {
-+		stream = context->streams[i];
-+		if (stream && stream->link && stream->link->tiled_peer)
++		struct dc_stream_state *stream = context->streams[i];
++
++		if (stream->link && stream->link->tiled_peer)
 +			stream->triggered_crtc_reset.enabled = true;
 +	}
  
  	set_master_stream(context->streams, context->stream_count);
  
-@@ -6661,3 +6672,30 @@
+@@ -6661,3 +6673,30 @@
  {
  	// Not yet implemented
  }
@@ -90,8 +91,8 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-
 +}
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-09-17 19:23:04.203479349 +0100
-@@ -2240,6 +2240,59 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-09-17 21:05:33.310978101 +0100
+@@ -2240,6 +2240,57 @@
  		DC_OK : DC_UNSUPPORTED_VALUE;
  }
  
@@ -137,10 +138,8 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connecto
 +	mutex_unlock(&dm->dc_lock);
 +
 +	if (sink->dc_edid.length) {
-+		const struct edid *edid = (const struct edid *)sink->dc_edid.raw_edid;
-+
 +		drm_edid_free(primary->drm_edid);
-+		primary->drm_edid = drm_edid_alloc(edid, sink->dc_edid.length);
++		primary->drm_edid = drm_edid_alloc(sink->dc_edid.raw_edid, sink->dc_edid.length);
 +
 +		mutex_lock(&dev->mode_config.mutex);
 +		drm_edid_connector_update(&primary->base, primary->drm_edid);
@@ -151,7 +150,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connecto
  struct dc_stream_state *
  amdgpu_dm_create_validate_stream_for_sink(struct drm_connector *connector,
  					  const struct drm_display_mode *drm_mode,
-@@ -2474,6 +2527,13 @@
+@@ -2474,6 +2525,13 @@
  			(mode->flags & DRM_MODE_FLAG_DBLSCAN))
  		return result;
  
@@ -165,7 +164,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connecto
  	/*
  	 * Only run this the first time mode_valid is called to initilialize
  	 * EDID mgmt
-@@ -3450,6 +3510,13 @@
+@@ -3450,6 +3508,13 @@
  	}
  
  	connector_type = to_drm_connector_type(link->connector_signal, link->link_id.id);
@@ -181,8 +180,8 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connecto
  			dm->ddev,
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-09-17 18:19:04.862481898 +0100
-@@ -97,6 +97,46 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-09-17 21:22:01.282629498 +0100
+@@ -97,6 +97,43 @@
  }
  EXPORT_IF_KUNIT(edid_extract_panel_id);
  
@@ -190,16 +189,13 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.
 + * Cross-wire tiled_peer between eDP root and DP slave so the slave can reach
 + * the root latch pulse during pre-detection when slave local_sink is NULL.
 + */
-+static void dm_helpers_wire_tiled_peer(struct dc_link *link,
-+				       const struct dc_edid_caps *edid_caps)
++static void dm_helpers_wire_tiled_peer(struct dc_link *link)
 +{
 +	enum signal_type target_signal;
 +	uint32_t i;
 +
-+	if (!link->dc || link->tiled_peer ||
-+	    !edid_caps->panel_patch.is_apple_5k_tiled_panel) {
++	if (!link->dc || link->tiled_peer)
 +		return;
-+	}
 +
 +	if (link->connector_signal == SIGNAL_TYPE_EDP) {
 +		target_signal = SIGNAL_TYPE_DISPLAY_PORT;
@@ -229,7 +225,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.
  STATIC_IFN_KUNIT void apply_edid_quirks(struct dc_link *link, struct edid *edid,
  			      struct dc_edid_caps *edid_caps)
  {
-@@ -147,6 +187,33 @@
+@@ -147,6 +184,33 @@
  		drm_dbg_driver(dev, "Hiding secondary tile on panel id %X\n", panel_id);
  		edid_caps->panel_patch.disable_second_tile = true;
  		break;
@@ -263,17 +259,19 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.
  	default:
  		return;
  	}
-@@ -216,6 +283,7 @@
+@@ -216,6 +280,9 @@
  	}
  
  	apply_edid_quirks(link, edid_buf, edid_caps);
-+	dm_helpers_wire_tiled_peer(link, edid_caps);
++	
++	if (edid_caps->panel_patch.is_apple_5k_tiled_panel)
++		dm_helpers_wire_tiled_peer(link);
  
  	sad_count = drm_edid_to_sad((struct edid *) edid->raw_edid, &sads);
  	if (sad_count <= 0)
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc.h linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc.h
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc.h	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc.h	2026-09-12 22:53:09.313993816 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc.h	2026-09-17 21:12:24.114898209 +0100
 @@ -1990,6 +1990,13 @@
  	bool skip_implict_edp_power_control;
  	bool forced_psr_active;
@@ -302,9 +300,9 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc.h linux-7.3-rc1-patche
 +{
 +	if (!link || link->connector_signal != SIGNAL_TYPE_DISPLAY_PORT)
 +		return false;
-+	if (link->local_sink && link->local_sink->edid_caps.panel_patch.is_apple_5k_tiled_panel)
-+		return true;
-+	return dc_link_is_apple_5k_root(link->tiled_peer);
++
++	return (link->local_sink && link->local_sink->edid_caps.panel_patch.is_apple_5k_tiled_panel) ||
++	       dc_link_is_apple_5k_root(link->tiled_peer);
 +}
 +
  struct dc_sink_init_data {
@@ -455,13 +453,11 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.
  #endif
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c	2026-09-17 19:21:22.660822190 +0100
-@@ -1091,6 +1091,32 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_training.c	2026-09-17 21:11:31.576285477 +0100
+@@ -1091,6 +1091,29 @@
  	return status;
  }
  
-+#define DP_LT_AUX_READY_ATTEMPTS           2
-+
 +/*
 + * Ensure the secondary tile TCON is awake and answering AUX reads before
 + * beginning DisplayPort link training.
@@ -482,14 +478,13 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_tr
 +	core_link_write_dpcd(link, DP_SET_POWER, &(uint8_t){DP_POWER_STATE_D0}, 1);
 +	fsleep(1000);
 +
-+	dpcd_rev = 0;
 +	return core_link_read_dpcd(link, DP_DPCD_REV, &dpcd_rev, sizeof(dpcd_rev)) == DC_OK && dpcd_rev;
 +}
 +
  enum dc_status dpcd_set_link_settings(
  	struct dc_link *link,
  	const struct link_training_settings *lt_settings)
-@@ -1671,6 +1697,11 @@
+@@ -1671,6 +1694,11 @@
  			msleep(delay_dp_power_up_in_ms);
  		}
  
@@ -501,7 +496,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_tr
  		edp_set_panel_assr(link, pipe_ctx, &panel_mode, true);
  
  		dp_set_panel_mode(link, panel_mode);
-@@ -1735,6 +1766,7 @@
+@@ -1735,6 +1763,7 @@
  				cur_link_settings.link_spread, status);
  		}
  
@@ -509,16 +504,3 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_tr
  		fail_count++;
  		dp_trace_lt_fail_count_update(link, fail_count, false);
  		if (link->ep_type == DISPLAY_ENDPOINT_PHY) {
-diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c
---- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_edp_panel_control.c	2026-09-12 19:38:10.740793770 +0100
-@@ -139,6 +139,9 @@
- 		}
- 	}
- 
-+	if (dc_link_is_apple_5k_slave(link))
-+		return DP_PANEL_MODE_EDP;
-+
- 	if (link->dpcd_caps.panel_mode_edp &&
- 		(link->connector_signal == SIGNAL_TYPE_EDP ||
- 		 (link->connector_signal == SIGNAL_TYPE_DISPLAY_PORT &&
