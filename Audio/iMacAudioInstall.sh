@@ -34,7 +34,7 @@ echo "Preparing to install system-level IRS files..."
 sudo mkdir -p "$IRS_DIR"
 
 # Loop through and install all necessary IRS files
-for irs_file in "Filters L Aug 14-MP.wav" "Filters R Aug 14-MP.wav" "Filters C2 Aug 16-MP.wav" "Filters LFE Aug 16-MP.wav"; do
+for irs_file in "Filters L Aug 14-MP-48k.wav" "Filters R Aug 14-MP-48k.wav" "Filters C2 Aug 16-MP-48k.wav" "Filters LFE Aug 16-MP-48k.wav"; do
     if [ -f "$irs_file" ]; then
         echo "Installing $irs_file to $IRS_DIR/$irs_file..."
         sudo cp "$irs_file" "$IRS_DIR/$irs_file"
