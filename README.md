@@ -48,19 +48,14 @@ Also, `iMac5K-GRUBFontSize-Ubuntu.sh` fixes tiny text in the GRUB menu.
 
 # Audio
 
-Script `iMacAudioInstall.sh` to install Speaker tuning (flat frequency response) I made using a professional microphone. This
-should make audio sound much better. Tuned on late 2015 iMac - unknown if will work well on other iMacs.
-Currently +/- 7 dB, hoping to retune soon to make it even flatter.
+Script `iMacAudioInstall.sh` to install Speaker tuning (flat frequency response +/- 4dB) I made entirely by hand using a UMIK-1 measurement microphone. Tuned on late 2015 iMac
 
-!! Always set the volume low before playing music. There seems
-to be a bug that the volume is higher than last set after reboot or logout/login [edit - hopefully solved now]. Do not set the master system volume "Built-in Audio Analogue Surround 4.0" to 100% it's too loud !!
+<img width="600" alt="Screenshot From 2026-09-20 14-38-19" src="https://github.com/user-attachments/assets/9d2a066f-663d-4ba8-994f-eb8ec3fba7dd" />
 
-It is essential to install Pavucontrol `sudo apt install pavucontrol` to set 4 channels as output (Configuration tab), and set volumes to sensible values (Output Devices tab). In the Ubuntu speaker settings you need to choose "iMac Speakers" to use my
+It is essential to install Pavucontrol `sudo apt install pavucontrol` to set 4 channels as output (Configuration tab), and set master system volume "Built-in Audio Analogue Surround 4.0" to 80% (Output Devices tab). In the Ubuntu speaker settings you need to choose "iMac Speakers" to use my
 tuning.
 
 <img width="600" alt="image" src="https://github.com/user-attachments/assets/9582ea63-e0ce-40f9-a59e-b0b105edfa54" />
-
-Issues: microphone currently not working on late 2015 iMac.
 
 # Wide Gamut (P3) Colour Support
 
