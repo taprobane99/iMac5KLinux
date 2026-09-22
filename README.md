@@ -1,5 +1,5 @@
 
-Simple one-click script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kernel on iMacs, alongside your existing kernel. You can switch back to your exisiting kernel from the GRUB menu at boot.
+Simple one-click script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kernel on iMacs, alongside your existing kernel. You can switch back to your existing kernel from the GRUB menu at boot.
 
 Works on Ubuntu 26.04 LTS. May work on Mint, and other Debian distros.
 
@@ -28,8 +28,8 @@ Models confirmed working:
 
 # Screen tearing
 
-Even though 5K works there are small tearing artifacts down the centre of the screen.
-This is fixed on Ubuntu if you run `iMac5K-MutterTearFix-Ubuntu.sh`. For KDE I hear a fix is in progress. Mint - unknown.
+There may be small tearing artifacts down the centre of the screen.
+This is fixed on Ubuntu if you run `iMac5K-MutterTearFix-Ubuntu.sh`.
 
 # Kernel Parameters for hardware quirks
 
@@ -49,13 +49,13 @@ Script `iMacAudioInstall.sh` to install Speaker tuning (flat frequency response 
 
 <img width="600" alt="Screenshot From 2026-09-20 14-38-19" src="https://github.com/user-attachments/assets/9d2a066f-663d-4ba8-994f-eb8ec3fba7dd" />
 
-Install Pavucontrol `sudo apt install pavucontrol` to set 4 channels as output (Configuration tab), and set master system volume "Built-in Audio Analogue Surround 4.0" to 80% (Output Devices tab). In the Ubuntu audio settings you need to choose "iMac Speakers".
+Install Pavucontrol `sudo apt install pavucontrol` to set 4 channels as output (Configuration tab), and set master system volume "Built-in Audio Analogue Surround 4.0" to 80% (Output Devices tab). In audio settings you need to choose "iMac Speakers".
 
 <img width="600" alt="image" src="https://github.com/user-attachments/assets/9582ea63-e0ce-40f9-a59e-b0b105edfa54" />
 
 # Wide Gamut Colour
 
-You will notice the iMac colours look saturated. In Ubuntu toggle your display scaling to a different value and back again to generate `~/.config/monitors.xml` (show hidden files in Files to find this from your Home folder).
+You will notice the iMac colours look saturated. In display settings toggle scaling to a different value and back again to generate `~/.config/monitors.xml` (show hidden files in Files to find this from your Home folder).
 Then add this line below `<mode>...</mode>` in `monitors.xml` for the screen mode you are using
 `<colormode>sdr-native</colormode>`. Log out/in to see changes.
 
