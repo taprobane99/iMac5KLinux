@@ -3,17 +3,17 @@ Simple script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kerne
 
 Works on Ubuntu 26.04 LTS. May work on Mint, and other Debian distros.
 
-It should work on all 5K iMacs except perhaps those with Vega GPUs. Backup important files before running.
+It should work on all pre-2020 5K iMacs except those with Vega GPUs.
 
 Needs 7GB Disk Space and 50-70 minutes compile time.
 
-You should be able to easily switch back to your previous kernel from the GRUB menu at boot.
+You can easily switch back to your previous kernel from the GRUB menu at boot.
 
 Credit: thanks to https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-logging which I used to initially generate my 7.0 patch
 
 Models confirmed working:
 
-| Generation / Release Year | Model Identifier | GPU Option (Family) | Working |
+| Generation / Release Year | Model Identifier | GPU Option (Family) | 5K Working |
 | :--- | :--- | :--- | :--- |
 | **Late 2014** | iMac15,1 | R9 M290X (Curacao) | |
 | **Late 2014** | iMac15,1 | R9 M295X (Tonga) | |
@@ -28,13 +28,12 @@ Models confirmed working:
 | **2020** | iMac20,2 | Pro 5700 / 5700 XT (Navi / RDNA) | |
 | **2017 (iMac Pro)** | iMacPro1,1 | Pro Vega 56 / 64 / 64X (Vega) | |
 
-# Fixing screen tearing
+# Screen tearing
 
-Even though 5K works there is a visible tear down the centre of the screen when scrolling fast.
-This is fixed on Ubuntu if you run `iMac5K-MutterTearFix-Ubuntu.sh`. For KDE I hear a fix is being made but not yet
-finished. Mint - unknown.
+Even though 5K works there are small tearing artifacts down the centre of the screen.
+This is fixed on Ubuntu if you run `iMac5K-MutterTearFix-Ubuntu.sh`. For KDE I hear a fix is in progress. Mint - unknown.
 
-# Kernel Parameters (GRUB)
+# Kernel Parameters for hardware quirks
 
 Script `iMac5K-GRUBParams.sh` to fix the following problems (in order) on a 2015 iMac. Unknown if they affect other iMacs.
 
@@ -42,24 +41,23 @@ Script `iMac5K-GRUBParams.sh` to fix the following problems (in order) on a 2015
 - Slow booting (~2 mins)/slow shutdown
 - Max brightness 400 nits instead of 500 nits*
 
-Also, `iMac5K-GRUBFontSize-Ubuntu.sh` fixes tiny text in the GRUB menu.
-
 * there is alternatively a script to fix this using a custom ACPI table instead of a kernel parameter
+
+Also, `iMac5K-GRUBFontSize-Ubuntu.sh` fixes tiny text in the GRUB menu.
 
 # Audio
 
-Script `iMacAudioInstall.sh` to install Speaker tuning (flat frequency response +/- 4dB) I made entirely by hand using a UMIK-1 measurement microphone. Tuned on late 2015 iMac
+Script `iMacAudioInstall.sh` to install Speaker tuning (flat frequency response +/- 4dB) I made by hand using a UMIK-1 measurement microphone. Tuned on late 2015 iMac
 
 <img width="600" alt="Screenshot From 2026-09-20 14-38-19" src="https://github.com/user-attachments/assets/9d2a066f-663d-4ba8-994f-eb8ec3fba7dd" />
 
-It is essential to install Pavucontrol `sudo apt install pavucontrol` to set 4 channels as output (Configuration tab), and set master system volume "Built-in Audio Analogue Surround 4.0" to 80% (Output Devices tab). In the Ubuntu speaker settings you need to choose "iMac Speakers" to use my
-tuning.
+Install Pavucontrol `sudo apt install pavucontrol` to set 4 channels as output (Configuration tab), and set master system volume "Built-in Audio Analogue Surround 4.0" to 80% (Output Devices tab). In the Ubuntu audio settings you need to choose "iMac Speakers".
 
 <img width="600" alt="image" src="https://github.com/user-attachments/assets/9582ea63-e0ce-40f9-a59e-b0b105edfa54" />
 
-# Wide Gamut (P3) Colour Support
+# Wide Gamut Colour
 
-You will notice the iMac colours look very saturated. In Ubuntu toggle your display scaling to a different value and back again to generate `~/.config/monitors.xml` (show hidden files in Files to find this from your Home folder).
+You will notice the iMac colours look saturated. In Ubuntu toggle your display scaling to a different value and back again to generate `~/.config/monitors.xml` (show hidden files in Files to find this from your Home folder).
 Then add this line below `<mode>...</mode>` in `monitors.xml` for the screen mode you are using
 `<colormode>sdr-native</colormode>`. Log out/in to see changes.
 
@@ -67,11 +65,11 @@ Then add this line below `<mode>...</mode>` in `monitors.xml` for the screen mod
 
 # Font Rendering
 
-Ubuntu/Gnome still uses outline hinting for fonts on HiDPI displays. Some non-GTK apps still apply subpixel-antialiasing, and hinting to fonts on HiDPI displays. This script `iMac5K-FontRenderingFix.sh` fixes those problems.
+Ubuntu/Gnome still uses outline font hinting on HiDPI displays. Some non-GTK apps still apply subpixel-antialiasing, and font hinting on HiDPI displays. This script `iMac5K-FontRenderingFix.sh` fixes those problems.
 
-# Thunderbolt dock usb ports
+# Thunderbolt dock USB ports
 
-These kernel parameters allow access to the usb ports/sd card reader/headphone jack on my Belkin Dock Pro (might work for other docks)
+These kernel parameters allow access to the USB ports/SD card reader/headphone jack on my Belkin TB3 Dock Pro (might work for other docks)
 
 `pci=assign-busses,hpbussize=0x20,hpiosize=0,hpmmiosize=256M,hpmmioprefsize=2G pcie_aspm=off`
 
@@ -91,6 +89,6 @@ drag the .sh file into a terminal window and press enter
 
 # Contributions
 
-Please add contributions via opening Issues. There are sure to be quirks for other iMacs that are
+Please add contributions via opening an Issue. There are sure to be quirks for other iMacs that are
 different to here. For example, if you have an iMac 2019 and use certain kernel parameters or other
 quirks I can add them to my script.
