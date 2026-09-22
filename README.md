@@ -1,15 +1,13 @@
 
-Simple script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kernel on iMacs, alongside your existing kernel.
+Simple one-click script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kernel on iMacs, alongside your existing kernel. You can switch back to your exisiting kernel from the GRUB menu at boot.
 
 Works on Ubuntu 26.04 LTS. May work on Mint, and other Debian distros.
 
-It should work on all pre-2020 5K iMacs except those with Vega GPUs.
+Works on all pre-2020 5K iMacs except those with Vega GPUs.
 
 Needs 7GB Disk Space and 50-70 minutes compile time.
 
-You can easily switch back to your previous kernel from the GRUB menu at boot.
-
-Credit: thanks to https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-logging which I used to initially generate my 7.0 patch
+Credit: thanks to https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-logging which I used to generate my 7.0 patch. My new 7.3 patch is reduced to 190 lines of human-edited code. At some point hopefully this will be mainlined.
 
 Models confirmed working:
 
