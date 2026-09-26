@@ -32,15 +32,11 @@ Models confirmed working:
 There may be small tearing artifacts down the centre of the screen.
 This is fixed on Ubuntu if you run `iMac5K-MutterTearFix-Ubuntu.sh`.
 
-## Kernel Parameters for hardware quirks
+## Hardware Quirks
 
-Script `iMac5K-GRUBParams.sh` to fix the following problems (in order) on a 2015 iMac. Unknown if they affect other iMacs.
+Script `iMac5K-GRUBParams.sh` to fix GPU power management problem that causes slow boot/shutdown and some apps not opening.
 
-- R9 M395X GPU power management problem (e.g. Resources app refuses to open)
-- Slow booting (~2 mins)/slow shutdown
-- Max brightness 400 nits instead of 500 nits
-
-There is alternatively a script to fix brightness using a custom ACPI table instead of a kernel parameter
+Script `iMac5K-500nitsfix-alliMacs-untested.sh` to fix max brightness to 500 nits instead of 400 nits using a custom ACPI table
 
 Also, `iMac5K-GRUBFontSize-Ubuntu.sh` fixes tiny text in the GRUB menu.
 
