@@ -1,47 +1,11 @@
-diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/amdgpu/amdgpu.h linux-7.3-rc1-patched/drivers/gpu/drm/amd/amdgpu/amdgpu.h
---- linux-7.3-rc1/drivers/gpu/drm/amd/amdgpu/amdgpu.h	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/amdgpu/amdgpu.h	2026-09-23 22:31:19.101556995 +0100
-@@ -1342,4 +1342,6 @@
- 			   uint64_t uid);
- uint64_t amdgpu_device_get_uid(struct amdgpu_uid *uid_info,
- 			       enum amdgpu_uid_type type, uint8_t inst);
-+			       
-+void amdgpu_dm_apple5k_unlatch_on_shutdown(struct amdgpu_device *adev);
- #endif
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-09-24 21:03:28.307293238 +0100
-@@ -1624,6 +1624,9 @@
- 		amdgpu_dm_ism_force_full_power(dm);
- 
- 	amdgpu_dm_hpd_rx_irq_work_suspend(dm);
-+	
-+	/* Reset Apple 5K panel registers so EFI doesn't skew the boot logo */
-+	amdgpu_dm_apple5k_unlatch_on_shutdown(adev);
- 
- 	dc_set_power_state(dm->dc, DC_ACPI_CM_POWER_STATE_D3);
- 
-@@ -4980,6 +4983,14 @@
- 		 * For now it's set to false
- 		 */
- 	}
-+	
-+	/* Flag Apple 5K tile pair so set_master_stream() can genlock CRTCs and prevent tearing */
-+	for (i = 0; i < context->stream_count; i++) {
-+		struct dc_stream_state *stream = context->streams[i];
-+
-+		if (stream->link && stream->link->tiled_peer)
-+			stream->triggered_crtc_reset.enabled = true;
-+	}
- 
- 	set_master_stream(context->streams, context->stream_count);
- 
-@@ -6661,3 +6672,30 @@
- {
- 	// Not yet implemented
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-09-26 14:15:25.970167218 +0100
+@@ -1563,6 +1563,33 @@
+ 	dm->cached_state = NULL;
  }
-+
-+void amdgpu_dm_apple5k_unlatch_on_shutdown(struct amdgpu_device *adev)
+ 
++static void amdgpu_dm_apple5k_unlatch_on_shutdown(struct amdgpu_device *adev)
 +{
 +	struct dc *dc;
 +	int i;
@@ -67,6 +31,41 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-
 +		}
 +	}
 +}
++
+ static int dm_suspend(struct amdgpu_ip_block *ip_block)
+ {
+ 	struct amdgpu_device *adev = ip_block->adev;
+@@ -1624,6 +1651,9 @@
+ 		amdgpu_dm_ism_force_full_power(dm);
+ 
+ 	amdgpu_dm_hpd_rx_irq_work_suspend(dm);
++	
++	/* Reset Apple 5K panel registers so EFI doesn't skew the boot logo */
++	amdgpu_dm_apple5k_unlatch_on_shutdown(adev);
+ 
+ 	dc_set_power_state(dm->dc, DC_ACPI_CM_POWER_STATE_D3);
+ 
+@@ -4980,6 +5010,14 @@
+ 		 * For now it's set to false
+ 		 */
+ 	}
++	
++	/* Flag Apple 5K tile pair so set_master_stream() can genlock CRTCs and prevent tearing */
++	for (i = 0; i < context->stream_count; i++) {
++		struct dc_stream_state *stream = context->streams[i];
++
++		if (stream->link && stream->link->tiled_peer)
++			stream->triggered_crtc_reset.enabled = true;
++	}
+ 
+ 	set_master_stream(context->streams, context->stream_count);
+ 
+@@ -6661,3 +6699,5 @@
+ {
+ 	// Not yet implemented
+ }
++
++
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-08-30 21:34:40.000000000 +0100
 +++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-09-24 21:43:03.506962955 +0100
@@ -194,7 +193,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.
  	if (sad_count <= 0)
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc.h linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc.h
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc.h	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc.h	2026-09-24 21:05:45.594948209 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/dc.h	2026-09-26 14:20:31.273220284 +0100
 @@ -1990,6 +1990,13 @@
  	bool skip_implict_edp_power_control;
  	bool forced_psr_active;
@@ -244,7 +243,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc_types.h linux-7.3-rc1-
  /**
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-09-24 21:41:28.455209421 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-09-26 14:40:23.346178636 +0100
 @@ -105,6 +105,36 @@
  	return transaction_type;
  }
@@ -292,15 +291,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c lin
  				result = SIGNAL_TYPE_DVI_SINGLE_LINK;
  		}
  		break;
-@@ -626,6 +657,7 @@
- 	struct audio_support *audio_support = &link->dc->res_pool->audio_support;
- 
- 	sink_caps->signal = link_detect_sink_signal_type(link, reason);
-+
- 	sink_caps->transaction_type =
- 		get_ddc_transaction_type(sink_caps->signal);
- 
-@@ -968,6 +1000,14 @@
+@@ -968,6 +999,14 @@
  				(link->ep_type == DISPLAY_ENDPOINT_USB4_DPIA &&
  				!link->dc->config.enable_dpia_pre_training)) {
  			destrictive = false;
@@ -315,7 +306,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c lin
  		} else if (link_dp_get_encoding_format(&max_link_cap) ==
  				DP_8b_10b_ENCODING) {
  			if (link->dpcd_caps.is_mst_capable ||
-@@ -1607,8 +1647,8 @@
+@@ -1607,8 +1646,8 @@
  
  		return true;
  	}
@@ -326,7 +317,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c lin
  	if (link_get_hpd_state(link)) {
  		*type = dc_connection_single;
  		/* TODO: need to do the actual detection */
-@@ -1621,6 +1661,16 @@
+@@ -1621,6 +1660,16 @@
  		}
  	}
  
@@ -359,11 +350,12 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_ca
  void dpcd_write_cable_id_to_dprx(struct dc_link *link)
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c	2026-09-23 22:31:19.106937007 +0100
-@@ -249,3 +249,11 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.c	2026-09-26 14:57:21.144823378 +0100
+@@ -249,3 +249,12 @@
  	}
  	return status;
  }
++
 +#define APPLE_5K_DPCD_ROOT_PANEL_LATCH 0x4F1
 +
 +/* Pulse DPCD register 0x4F1 on the root eDP link to wake the panel TCON */
@@ -374,7 +366,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.
 +}
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h	2026-09-23 22:31:19.107194415 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dpcd.h	2026-09-26 14:21:01.251980550 +0100
 @@ -39,4 +39,5 @@
  		uint32_t address,
  		const uint8_t *data,
