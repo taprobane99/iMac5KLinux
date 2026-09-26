@@ -8,7 +8,7 @@ Works on all pre-2020 5K iMacs except those with Vega GPUs.
 
 Needs 7GB Disk Space and 50-70 minutes compile time.
 
-Credit: thanks to https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-logging which I used to generate my 7.0 patch. My new 7.3 patch is reduced to 190 lines of human-edited code. At some point hopefully this will be mainlined.
+Credit: thanks to https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-logging which I used to generate my 7.0 patch. My new 7.3 patch is reduced to 140 lines of human-edited code. At some point hopefully this will be mainlined.
 
 Models confirmed working:
 
