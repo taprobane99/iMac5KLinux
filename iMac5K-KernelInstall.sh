@@ -13,9 +13,10 @@ echo "==========================================="
 echo "1) Kernel 7.2.3 (Stable)"
 echo "2) Kernel 7.3-rc1 (Mainline)"
 echo "3) Kernel 7.2.x (Latest Stable using 7.2.3 patch)"
-echo "4) Quit"
+echo "4) Kernel 7.0.0 (Stable)"
+echo "5) Quit"
 echo "==========================================="
-read -p "Enter choice [1-4]: " choice
+read -p "Enter choice [1-5]: " choice
 
 case $choice in
     1)
@@ -23,12 +24,14 @@ case $choice in
         PATCH_VERSION="7.2.3"
         KERNEL_TARBALL="linux-${KERNEL_VERSION}.tar.xz"
         KERNEL_URL="https://cdn.kernel.org/pub/linux/kernel/v7.x/${KERNEL_TARBALL}"
+        SOURCE_DIR_NAME="linux-${KERNEL_VERSION}"
         ;;
     2)
         KERNEL_VERSION="7.3-rc1"
         PATCH_VERSION="7.3-rc1"
         KERNEL_TARBALL="linux-${KERNEL_VERSION}.tar.gz"
         KERNEL_URL="https://git.kernel.org/torvalds/t/${KERNEL_TARBALL}"
+        SOURCE_DIR_NAME="linux-${KERNEL_VERSION}"
         ;;
     3)
         echo "Detecting latest 7.2.x kernel from cdn.kernel.org..."
@@ -44,9 +47,17 @@ case $choice in
         PATCH_VERSION="7.2.3"
         KERNEL_TARBALL="${LATEST_TARBALL}"
         KERNEL_URL="https://cdn.kernel.org/pub/linux/kernel/v7.x/${KERNEL_TARBALL}"
+        SOURCE_DIR_NAME="linux-${KERNEL_VERSION}"
         echo "Found version: ${KERNEL_VERSION}"
         ;;
     4)
+        KERNEL_VERSION="7.0.0"
+        PATCH_VERSION="7.0.0"
+        KERNEL_TARBALL="linux-7.0.tar.xz"
+        KERNEL_URL="https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.0.tar.xz"
+        SOURCE_DIR_NAME="linux-7.0"
+        ;;
+    5)
         echo "Exiting script."
         exit 0
         ;;
@@ -73,7 +84,7 @@ START_USED_MB=$(df -m / | awk 'NR==2 {print $3}')
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 # Update PATCH_FILE to use the new PATCH_VERSION variable
 PATCH_FILE="${SCRIPT_DIR}/iMac5K-${PATCH_VERSION}.patch"
-SOURCE_DIR="${SCRIPT_DIR}/linux-${KERNEL_VERSION}"
+SOURCE_DIR="${SCRIPT_DIR}/${SOURCE_DIR_NAME}"
 
 # Verify Debian-based OS and set kernel localversion suffix
 if [ -f /etc/os-release ]; then
@@ -96,7 +107,7 @@ if [ -f /etc/os-release ]; then
                 echo "🚨 UNSUPPORTED DISTRIBUTION 🚨"
                 echo "=========================================================="
                 echo "This script is only compatible with Debian-based"
-                echo "distributions (e.g. Ubuntu, Linux Mint, Debian)."
+                echo "distributions (e.g. Ubuntu, Linux Mint, Zorin, Debian)."
                 echo ""
                 echo "Detected: ID='${ID}', ID_LIKE='${ID_LIKE}'"
                 echo "Installation cannot proceed."
@@ -136,7 +147,7 @@ if [ -d "${SOURCE_DIR}" ]; then
     echo "=========================================================="
     echo "🚨 DIRECTORY ALREADY EXISTS 🚨"
     echo "=========================================================="
-    echo "The directory 'linux-${KERNEL_VERSION}' already exists in:"
+    echo "The directory '${SOURCE_DIR_NAME}' already exists in:"
     echo "${SCRIPT_DIR}"
     echo ""
     echo "Extraction aborted to avoid overwriting an existing directory."
@@ -159,7 +170,7 @@ if [ -f "${PATCH_FILE}" ]; then
         echo "conflicts with your 'iMac5K-${PATCH_VERSION}.patch' file."
         echo ""
         echo "Don't worry—your system is fine. To fix this:"
-        echo "1. Look for '*.rej' files in the 'linux-${KERNEL_VERSION}' folder."
+        echo "1. Look for '*.rej' files in the '${SOURCE_DIR_NAME}' folder."
         echo "2. These files show exactly which code blocks (hunks) failed."
         echo "3. Manually insert the rejected hunks into the new kernel code."
         echo "=========================================================="
