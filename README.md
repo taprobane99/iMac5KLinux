@@ -13,7 +13,7 @@ Credit: thanks to https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-log
 Models confirmed working:
 
 | Generation / Release Year | Model Identifier | GPU Option (Family) | 5K Working |
-| :--- | :--- | :--- | :--- |
+| :--- | :--- | :--- | :---: |
 | **Late 2014** | iMac15,1 | R9 M290X (Curacao) | |
 | **Late 2014** | iMac15,1 | R9 M295X (Tonga) | |
 | **Mid 2015** | iMac15,1 | R9 M290X (Curacao) | |
@@ -22,10 +22,15 @@ Models confirmed working:
 | **Late 2015** | iMac17,1 | R9 M395 / M395X (Tonga) | ✅ |
 | **Mid 2017** | iMac18,3 | Pro 570 / 575 / 580 (Polaris) | ✅ |
 | **2019** | iMac19,1 | Pro 570X / 575X / 580X (Polaris) | |
-| **2019** | iMac19,1 | Pro Vega 48 (Vega) | |
-| **2020** | iMac20,1 | Pro 5300 / 5500 XT (Navi / RDNA) | |
-| **2020** | iMac20,2 | Pro 5700 / 5700 XT (Navi / RDNA) | |
-| **2017 (iMac Pro)** | iMacPro1,1 | Pro Vega 56 / 64 / 64X (Vega) | |
+| **2019** | iMac19,1 | Pro Vega 48 (Vega) | 🚧 |
+| **2020** | iMac20,1 | Pro 5300 / 5500 XT (Navi / RDNA) | ➖ |
+| **2020** | iMac20,2 | Pro 5700 / 5700 XT (Navi / RDNA) | ➖ |
+| **2017 (iMac Pro)** | iMacPro1,1 | Pro Vega 56 / 64 / 64X (Vega) | 🚧 |
+
+**Legend:**
+* ✅ **Working**: Tiled 5K display working with patch.
+* 🚧 **Work in Progress**: Vega architecture support under development.
+* ➖ **Not Applicable**: 2020 models use a non-tiled single-stream eDP panel (DSC).
 
 ## Screen tearing
 
