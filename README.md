@@ -2,7 +2,7 @@
 
 Simple one-click script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kernel on iMacs, alongside your existing kernel. You can switch back to your existing kernel from the GRUB menu at boot.
 
-Works on Ubuntu 26.04 LTS. May work on Mint, and other Debian distros.
+Works on Ubuntu 26.04 LTS. May work on Mint, Zorin, and other Debian distros.
 
 Works on all pre-2020 5K iMacs except those with Vega GPUs.
 
