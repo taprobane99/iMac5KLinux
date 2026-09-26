@@ -70,7 +70,7 @@ Ubuntu/Gnome still uses outline font hinting on HiDPI displays. Some non-GTK app
 
 These kernel parameters allow access to the USB ports/SD card reader/headphone jack on my Belkin TB3 Dock Pro (might work for other docks)
 
-`pci=hpbussize=0x10,hpmmiosize=128M,hpmmioprefsize=512M pcie_aspm=off`
+`usbcore.autosuspend=-1`
 
 ## Running .sh scripts
 
