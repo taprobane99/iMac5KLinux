@@ -1,6 +1,6 @@
 ## 5K Kernel
 
-Intel 5K iMacs can only achieve 4K resolution in the existing Linux kernel.
+Intel 5K iMacs can only achieve 4K resolution in the existing Linux kernel. This patch properly activates the 5K tiling mode that is used in macOS.
 
 Simple one-click script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kernel on iMacs, alongside your existing kernel. You can switch back to your existing kernel from the GRUB menu at boot.
 
