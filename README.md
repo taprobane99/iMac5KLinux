@@ -88,6 +88,4 @@ drag the .sh file into a terminal window and press enter
 
 ## Contributions
 
-Please add contributions via opening an Issue. There are sure to be quirks for other iMacs that are
-different to here. For example, if you have an iMac 2019 and use certain kernel parameters or other
-quirks I can add them to my script.
+Please add contributions via opening an Issue. There are sure to be other iMac quirks not listed here.
