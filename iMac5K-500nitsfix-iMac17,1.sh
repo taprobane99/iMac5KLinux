@@ -2,8 +2,8 @@
 #
 # imac-backlight-fix.sh -- 500-nit backlight override for iMac 5K on Linux
 #
-# Generates a patched SSDT with brightness levels 4..100 and packages it
-# directly into /boot/custom_acpi.cpio for early initrd loading.
+# Generates a patched SSDT with brightness levels 1..101 (clamping 101 to 0xFFFF)
+# and packages it directly into /boot/custom_acpi.cpio for early initrd loading.
 #
 set -euo pipefail
 
@@ -127,13 +127,13 @@ for i in range(open_brace_idx, len(s)):
 
 assert close_brace_idx != -1, "Matching closing brace for Method (ABCL) not found"
 
-# Check if table is already running levels 4..100
-if "Package (0x63)" in s[open_brace_idx:close_brace_idx]:
-    print("  [Python] Table already reflects 99 brightness entries (levels 4..100).")
+# Check if table is already running levels 1..101 (103 entries = 0x67)
+if "Package (0x67)" in s[open_brace_idx:close_brace_idx]:
+    print("  [Python] Table already reflects 103 brightness entries (levels 1..101).")
     sys.exit(3)
 
-# 3. Construct 4..100 table (97 levels + 2 defaults = 99 items = 0x63)
-levels = list(range(4, 101))
+# 3. Construct 1..101 table (101 levels + 2 defaults = 103 items = 0x67)
+levels = list(range(1, 102))
 formatted_levels = ['0x64', '0x32'] + [f'0x{lvl:02X}' for lvl in levels]
 body = ",\n                        ".join(formatted_levels)
 
@@ -147,7 +147,7 @@ replacement = f"""Method (ABCL, 0, NotSerialized)
                 }}
                 Else
                 {{
-                    Return (Package (0x63)
+                    Return (Package (0x67)
                     {{
                         {body}
                     }})
@@ -155,14 +155,14 @@ replacement = f"""Method (ABCL, 0, NotSerialized)
             }}"""
 
 s = s[:idx] + replacement + s[close_brace_idx + 1:]
-print(f"  [Python] Replaced ABCL return package: injected levels 4..100 (99 values).")
+print(f"  [Python] Replaced ABCL return package: injected levels 1..101 (103 values).")
 
 with open(path, 'w') as f:
     f.write(s)
 PY
 
 if ((rc == 3)); then
-    log_warn "Host table is already running modified brightness levels. Using existing table."
+    log_warn "Host table is already running modified brightness levels (1..101). Using existing table."
     cp "$T" out.aml
 elif ((rc != 0)); then
     log_error "Python AST replacement failed with exit code $rc."
@@ -180,7 +180,7 @@ fi
 # 5. CPIO Packaging
 log_step "5/6" "Packaging early-initrd CPIO archive"
 mkdir -p kernel/firmware/acpi
-cp out.aml kernel/firmware/acpi/imac-bcl100.aml
+cp out.aml kernel/firmware/acpi/imac-bcl101.aml
 
 find kernel | cpio -H newc --create > /boot/custom_acpi.cpio 2>/dev/null
 chmod 600 /boot/custom_acpi.cpio
