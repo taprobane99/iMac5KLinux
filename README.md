@@ -50,7 +50,7 @@ Also, `iMac5K-GRUBFontSize-Ubuntu.sh` fixes tiny text in the GRUB menu.
 
 ## Audio
 
-Script `iMacAudioInstall.sh` to install Speaker tuning (flat frequency response +/- 4dB) I made by hand using a UMIK-1 measurement microphone. Tuned on late 2015 iMac
+Script `iMacAudioInstall.sh` to install Speaker tuning (flat frequency response +/- 4dB) I made by hand using a UMIK-1 measurement microphone. Tuned on late 2015 iMac using the Asahi Audio method.
 
 <img width="600" alt="Screenshot From 2026-09-20 14-38-19" src="https://github.com/user-attachments/assets/9d2a066f-663d-4ba8-994f-eb8ec3fba7dd" />
 
