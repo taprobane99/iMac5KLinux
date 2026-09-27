@@ -60,11 +60,7 @@ Install Pavucontrol `sudo apt install pavucontrol` to set 4 channels as output (
 
 ## Wide Gamut Colour
 
-You will notice the iMac colours look saturated. In display settings toggle scaling to a different value and back again to generate `~/.config/monitors.xml` (show hidden files in Files to find this from your Home folder).
-Then add this line below `<mode>...</mode>` in `monitors.xml` for the screen mode you are using
-`<colormode>sdr-native</colormode>`. Log out/in to see changes.
-
-<img width="400" alt="Screenshot From 2026-09-06 10-39-45" src="https://github.com/user-attachments/assets/a755507e-ad5b-4fec-bea5-0bb333e2e7f2" />
+Script `iMac5K-WideGamutColour.sh` correctly sets Ubuntu to use the wide gamut colourspace (DCI-P3) available with the iMac display.
 
 ## Font Rendering
 
