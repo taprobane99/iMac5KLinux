@@ -16,9 +16,19 @@ sudo apt build-dep -y mutter
 # Grabbing the core compiler tools and libxml2-utils for the xmllint warning
 sudo apt install -y git meson ninja-build pkg-config libxml2-utils
 
-echo "-> Cloning Mutter repository (tiletear-v2-50.1-rubin)..."
+# Detect GNOME version
+GNOME_VERSION=$(gnome-shell --version | awk '{print $3}' | cut -d. -f1)
+echo "-> Detected GNOME major version: $GNOME_VERSION"
+
+if [ "$GNOME_VERSION" = "51" ]; then
+    MUTTER_BRANCH="tiletear-v2s-51.0-taprobane99"
+else
+    MUTTER_BRANCH="tiletear-v2-50.1-rubin"
+fi
+
+echo "-> Cloning Mutter repository (branch: $MUTTER_BRANCH)..."
 rm -rf mutter-tiletear
-git clone -b tiletear-v2-50.1-rubin https://gitlab.gnome.org/adlr/mutter.git mutter-tiletear
+git clone -b $MUTTER_BRANCH https://gitlab.gnome.org/adlr/mutter.git mutter-tiletear
 cd mutter-tiletear
 
 echo "-> Configuring build environment..."
