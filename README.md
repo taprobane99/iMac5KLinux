@@ -44,7 +44,7 @@ This is fixed on Ubuntu if you run `iMac5K-MutterTearFix-Ubuntu.sh`.
 
 Script `iMac5K-GRUBParams.sh` to fix GPU power management problem that causes slow boot/shutdown and some apps not opening.
 
-Script `iMac5K-500nitsfix.sh` to fix max brightness to 500 nits instead of 400 nits using a custom ACPI table
+Script `iMac5K-500nitsFix.sh` to fix max brightness to 500 nits instead of 400 nits using a custom ACPI table
 
 Also, `iMac5K-GRUBFontSize-Ubuntu.sh` fixes tiny text in the GRUB menu.
 
