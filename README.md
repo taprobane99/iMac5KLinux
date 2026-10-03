@@ -4,7 +4,7 @@ Intel 5K iMacs can only achieve 4K resolution in the existing Linux kernel. This
 
 Simple one-click script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kernel on iMacs, alongside your existing kernel. You can switch back to your existing kernel from the GRUB menu at boot.
 
-Works on Ubuntu 26.04 LTS. May work on Mint, Zorin, and other Debian distros.
+Works on Ubuntu 26.04 LTS and 26.10. May work on Mint, Zorin, and other Debian distros.
 
 Works on all pre-2020 5K iMacs except those with Vega GPUs.
 
@@ -41,10 +41,9 @@ There may be small tearing artifacts down the centre of the screen.
 This is fixed on Ubuntu if you run `iMac5K-MutterTearFix-Ubuntu.sh`.
 
 ## Hardware Quirks
+`iMac5K-GRUBParams.sh` to fix GPU power management problem that causes slow boot/shutdown and some apps not opening.
 
-Script `iMac5K-GRUBParams.sh` to fix GPU power management problem that causes slow boot/shutdown and some apps not opening.
-
-Script `iMac5K-500nitsFix.sh` to fix max brightness to 500 nits instead of 400 nits using a custom ACPI table
+`iMac5K-500nitsFix.sh` to fix max brightness to 500 nits instead of 400 nits using a custom ACPI table
 
 `iMac5K-GRUBFontSize-Ubuntu.sh` fixes tiny text in the GRUB menu.
 
@@ -52,7 +51,7 @@ Script `iMac5K-500nitsFix.sh` to fix max brightness to 500 nits instead of 400 n
 
 ## Audio
 
-Script `iMacAudioInstall.sh` to install Speaker tuning (flat frequency response +/- 4dB) I made by hand using a UMIK-1 measurement microphone. Tuned on late 2015 iMac using the Asahi Audio method.
+`iMacAudioInstall.sh` to install Speaker tuning (flat frequency response +/- 4dB) I made by hand using a UMIK-1 measurement microphone. Tuned on late 2015 iMac using the Asahi Audio method.
 
 <img width="600" alt="Screenshot From 2026-09-20 14-38-19" src="https://github.com/user-attachments/assets/9d2a066f-663d-4ba8-994f-eb8ec3fba7dd" />
 
@@ -62,11 +61,11 @@ Install Pavucontrol `sudo apt install pavucontrol` to set 4 channels as output (
 
 ## Wide Gamut Colour
 
-Script `iMac5K-WideGamutColour.sh` correctly sets Ubuntu to use the wide gamut colourspace (DCI-P3) available with the iMac display.
+`iMac5K-WideGamutColour.sh` correctly sets Ubuntu to use the wide gamut colourspace (DCI-P3) available with the iMac display.
 
 ## Font Rendering
 
-Ubuntu/Gnome still uses outline font hinting on HiDPI displays. Some non-GTK apps still apply subpixel-antialiasing, and font hinting on HiDPI displays. This script `iMac5K-FontRenderingFix.sh` fixes those problems.
+Ubuntu/Gnome still uses outline font hinting on HiDPI displays. Some non-GTK apps still apply subpixel-antialiasing, and font hinting on HiDPI displays. `iMac5K-FontRenderingFix.sh` fixes those problems.
 
 ## Thunderbolt dock USB ports
 
