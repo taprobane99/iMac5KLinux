@@ -87,8 +87,6 @@ drag the .sh file into a terminal window and press enter
 - https://github.com/aunetx/blur-my-shell/tree/refactor/unified-blur-backend (clone this branch) for Liquid Glass
 - https://github.com/kem-a/kiwi-kemma for making Ubuntu/Gnome feel at home for Mac users
 
-## 
-
 ## Contributions
 
 Please add contributions via opening an Issue. There are sure to be other iMac quirks not listed here.
