@@ -46,7 +46,9 @@ Script `iMac5K-GRUBParams.sh` to fix GPU power management problem that causes sl
 
 Script `iMac5K-500nitsFix.sh` to fix max brightness to 500 nits instead of 400 nits using a custom ACPI table
 
-Also, `iMac5K-GRUBFontSize-Ubuntu.sh` fixes tiny text in the GRUB menu.
+`iMac5K-GRUBFontSize-Ubuntu.sh` fixes tiny text in the GRUB menu.
+
+`GPU-ToggleButton.ini` can be loaded in to the Custom Command Toggle Gnome Extension (https://github.com/StorageB/custom-command-toggle). It appears in Quick Settings. It will default to power saving mode, and switch to a higher performance mode when toggled on.
 
 ## Audio
 
