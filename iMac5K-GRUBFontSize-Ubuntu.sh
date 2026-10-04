@@ -43,10 +43,8 @@ GRUB_CFG="/etc/default/grub"
 
 # Check if GRUB_FONT is already defined
 if grep -q "^GRUB_FONT=" "$GRUB_CFG"; then
-    # Replace existing line
     sed -i "s|^GRUB_FONT=.*|GRUB_FONT=\"$FONT_DEST\"|" "$GRUB_CFG"
 else
-    # Append to the end
     echo "" >> "$GRUB_CFG"
     echo "# Custom Large GRUB Font" >> "$GRUB_CFG"
     echo "GRUB_FONT=\"$FONT_DEST\"" >> "$GRUB_CFG"
@@ -55,4 +53,45 @@ fi
 echo "4. Applying changes to GRUB..."
 update-grub
 
-echo "Done! The new font size is ~$(du -h $FONT_DEST | cut -f1). Reboot your system to see the changes."
+echo "5. Configuring Linux TTY console font to maximum size (Terminus 16x32)..."
+CONSOLE_CFG="/etc/default/console-setup"
+
+# Install terminus fonts package if not present
+if ! dpkg -s fonts-terminus >/dev/null 2>&1; then
+    echo "   Installing fonts-terminus and console-setup..."
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y fonts-terminus console-setup
+fi
+
+# Backup console-setup if not already backed up
+if [ -f "$CONSOLE_CFG" ] && [ ! -f "${CONSOLE_CFG}.bak" ]; then
+    cp "$CONSOLE_CFG" "${CONSOLE_CFG}.bak"
+fi
+
+# Configure console settings for largest standard TTY font
+set_or_append() {
+    local key="$1"
+    local val="$2"
+    local file="$3"
+    if grep -q "^${key}=" "$file" 2>/dev/null; then
+        sed -i "s|^${key}=.*|${key}=\"${val}\"|" "$file"
+    else
+        echo "${key}=\"${val}\"" >> "$file"
+    fi
+}
+
+set_or_append "FONTFACE" "Terminus" "$CONSOLE_CFG"
+set_or_append "FONTSIZE" "16x32" "$CONSOLE_CFG"
+set_or_append "CODESET" "guess" "$CONSOLE_CFG"
+
+echo "6. Applying font to active console and updating initramfs..."
+# Apply font to active virtual terminal immediately if running inside a TTY
+if [ -c /dev/tty0 ]; then
+    setupcon --save-only 2>/dev/null || true
+    setfont /usr/share/consolefonts/Uni3-Terminus32x16.psf.gz 2>/dev/null || true
+fi
+
+# Update initramfs so font applies on early boot
+update-initramfs -u
+
+echo "Done! GRUB and TTY fonts have been updated. Reboot your system to see all changes."
