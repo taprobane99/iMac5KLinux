@@ -33,7 +33,7 @@ Models confirmed working:
 * ✅ **Working**: Tiled 5K display working with patch.
 * 🛠️ **Work in Progress**: Vega under investigation.
 * ❓ **Needs Confirmation**: Hardware untested; requires verification whether Display Core (`amdgpu.dc=1`) operates stably on GCN 1.
-* ➖ **Not Applicable**: 2020 models use a non-tiled single-stream eDP panel (DSC).
+* ➖ **Use T2 Linux**: 2020 models use a non-tiled single-stream eDP panel (DSC). T2 Linux now has 5K support https://t2linux.org/ .
 
 ## Screen tearing
 
@@ -58,6 +58,8 @@ This is fixed on Ubuntu if you run `iMac5K-MutterTearFix-Ubuntu.sh`.
 Install Pavucontrol `sudo apt install pavucontrol` to set 4 channels as output (Configuration tab), and set master system volume "Built-in Audio Analogue Surround 4.0" to 80% (Output Devices tab). In audio settings you need to choose "iMac Speakers".
 
 <img width="600" alt="image" src="https://github.com/user-attachments/assets/9582ea63-e0ce-40f9-a59e-b0b105edfa54" />
+
+Note: if you have a 2017-2019 iMac you will need to install this first: https://github.com/davidjo/snd_hda_macbookpro
 
 ## Wide Gamut Colour
 
