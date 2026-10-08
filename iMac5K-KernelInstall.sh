@@ -28,7 +28,7 @@ case $choice in
         ;;
     2)
         KERNEL_VERSION="7.3-rc1"
-        PATCH_VERSION="7.3-rc1"
+        PATCH_VERSION="7.3-rc1-nodebug-slim"
         KERNEL_TARBALL="linux-${KERNEL_VERSION}.tar.gz"
         KERNEL_URL="https://git.kernel.org/torvalds/t/${KERNEL_TARBALL}"
         SOURCE_DIR_NAME="linux-${KERNEL_VERSION}"
