@@ -1,12 +1,13 @@
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-09-26 14:15:25.970167218 +0100
-@@ -1563,6 +1563,33 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-10-10 00:57:42.864106328 +0100
+@@ -1563,6 +1563,36 @@
  	dm->cached_state = NULL;
  }
  
 +static void amdgpu_dm_apple5k_unlatch_on_shutdown(struct amdgpu_device *adev)
 +{
++	const uint8_t zeros[3] = { 0 };
 +	struct dc *dc;
 +	int i;
 +
@@ -18,54 +19,48 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-
 +	for (i = 0; i < dc->link_count; i++) {
 +		struct dc_link *link = dc->links[i];
 +
-+		if (dc_link_is_apple_5k_secondary(link)) {
-+			/* Clear Boot Camp tables and unlatch secondary tile */
-+			core_link_write_dpcd(link, 0x310, (const uint8_t[]){0, 0, 0}, 3);
-+			core_link_write_dpcd(link, 0x10A, &(uint8_t){0}, 1);
-+			core_link_write_dpcd(link, 0x4F1, &(uint8_t){0}, 1);
++		if (!dc_link_is_apple_5k_secondary(link))
++			continue;
 +
-+			/* Unlatch primary root tile */
-+			if (link->tiled_peer)
-+				core_link_write_dpcd(link->tiled_peer, 0x4F1, &(uint8_t){0}, 1);
-+			break;
-+		}
++		/* Clear Boot Camp tables and unlatch secondary tile */
++		core_link_write_dpcd(link, 0x310, zeros, 3);
++		core_link_write_dpcd(link, 0x10A, zeros, 1);
++		core_link_write_dpcd(link, 0x4F1, zeros, 1);
++
++		/* Unlatch primary root tile */
++		if (link->tiled_peer)
++			core_link_write_dpcd(link->tiled_peer, 0x4F1, zeros, 1);
++		
++		break;
 +	}
 +}
 +
  static int dm_suspend(struct amdgpu_ip_block *ip_block)
  {
  	struct amdgpu_device *adev = ip_block->adev;
-@@ -1624,6 +1651,9 @@
+@@ -1624,6 +1654,8 @@
  		amdgpu_dm_ism_force_full_power(dm);
  
  	amdgpu_dm_hpd_rx_irq_work_suspend(dm);
-+	
 +	/* Reset Apple 5K panel registers so EFI doesn't skew the boot logo */
 +	amdgpu_dm_apple5k_unlatch_on_shutdown(adev);
  
  	dc_set_power_state(dm->dc, DC_ACPI_CM_POWER_STATE_D3);
  
-@@ -4980,6 +5010,14 @@
+@@ -4979,6 +5011,13 @@
+ 		 * crtc_sync_master.multi_sync_enabled flag
  		 * For now it's set to false
  		 */
- 	}
-+	
++	}	
 +	/* Flag Apple 5K tile pair so set_master_stream() can genlock CRTCs and prevent tearing */
 +	for (i = 0; i < context->stream_count; i++) {
 +		struct dc_stream_state *stream = context->streams[i];
 +
 +		if (stream->link && stream->link->tiled_peer)
 +			stream->triggered_crtc_reset.enabled = true;
-+	}
+ 	}
  
  	set_master_stream(context->streams, context->stream_count);
- 
-@@ -6661,3 +6699,5 @@
- {
- 	// Not yet implemented
- }
-+
-+
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-08-30 21:34:40.000000000 +0100
 +++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-09-24 21:43:03.506962955 +0100
@@ -102,65 +97,38 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connecto
  			&aconnector->base,
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-09-24 21:04:54.600671540 +0100
-@@ -97,6 +97,43 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-10-10 00:54:17.677398125 +0100
+@@ -97,6 +97,18 @@
  }
  EXPORT_IF_KUNIT(edid_extract_panel_id);
  
-+/*
-+ * Cross-wire tiled_peer between eDP root and DP secondary so the secondary can reach
-+ * the root latch pulse during pre-detection when secondary local_sink is NULL.
-+ */
++/* Pairs the two internal hardware links driving the Apple 5K panel, 
++ * allowing the driver to synchronize both tiles as a single display. */
 +static void dm_helpers_wire_tiled_peer(struct dc_link *link)
 +{
-+	enum signal_type target_signal;
-+	uint32_t i;
++	struct dc_link *other = link->dc->links[link->link_index ^ 1];
 +
-+	if (!link->dc || link->tiled_peer)
-+		return;
-+
-+	if (link->connector_signal == SIGNAL_TYPE_EDP) {
-+		target_signal = SIGNAL_TYPE_DISPLAY_PORT;
-+	} else if (link->connector_signal == SIGNAL_TYPE_DISPLAY_PORT) {
-+		target_signal = SIGNAL_TYPE_EDP;
-+	} else {
-+		return;
-+	}
-+
-+	for (i = 0; i < link->dc->link_count; i++) {
-+		struct dc_link *other = link->dc->links[i];
-+
-+		/*
-+		 * Match the complementary internal panel link (index 0 for root,
-+		 * index 1 for secondary) to avoid pairing with external DP displays.
-+		 */
-+		if (other && other != link && !other->tiled_peer &&
-+		    other->connector_signal == target_signal &&
-+		    (other->link_index == 0 || other->link_index == 1)) {
-+			link->tiled_peer = other;
-+			other->tiled_peer = link;
-+			return;
-+		}
++	if (other && !link->tiled_peer && !other->tiled_peer) {
++		link->tiled_peer = other;
++		other->tiled_peer = link;
 +	}
 +}
 +
  STATIC_IFN_KUNIT void apply_edid_quirks(struct dc_link *link, struct edid *edid,
  			      struct dc_edid_caps *edid_caps)
  {
-@@ -147,6 +184,33 @@
+@@ -147,6 +159,31 @@
  		drm_dbg_driver(dev, "Hiding secondary tile on panel id %X\n", panel_id);
  		edid_caps->panel_patch.disable_second_tile = true;
  		break;
 +	/*
 +	 * Apple 27" 5K dual-tile internal panel (iMac15,1 / 17,1 / 18,3 / 19,1 / 20,x / iMacPro1,1).
-+	 * Older family: AE01 root-compat, AE02 tile identity.
-+	 * iMac17,1 family: AE05 root-compat, AE06 tile identity.
-+	 * iMac18,3 family: AE11 root-compat, AE12 tile identity; AE13 is the
-+	 * DisplayID tiled-display product ID, not a base EDID panel ID.
-+	 * iMac Pro family: AE1D root-compat, AE1E tile identity.
-+	 * Newer family: AE25 root-compat, AE26 tile identity.
-+	 * 2020 family: AE31 root-compat, AE32 tile identity; AE33 is the
-+	 * DisplayID tiled-display product ID, not a base EDID panel ID.
++	 * iMac15,1? family: AE01 root-compat, AE02 tile identity
++	 * iMac17,1 family: AE05 root-compat, AE06 tile identity
++	 * iMac18,3 family: AE11 root-compat, AE12 tile identity
++	 * iMac Pro family: AE1D root-compat, AE1E tile identity
++	 * iMac19,1? family: AE25 root-compat, AE26 tile identity
++	 * iMac20,x family: AE31 root-compat, AE32 tile identity
 +	 * Role discrimination is by connector_signal (eDP=root, DP=secondary) — not by
 +	 * panel-id alone, since the primary can flip after the wake.
 +	 */
@@ -181,7 +149,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.
  	default:
  		return;
  	}
-@@ -216,6 +280,9 @@
+@@ -216,6 +253,9 @@
  	}
  
  	apply_edid_quirks(link, edid_buf, edid_caps);
@@ -243,8 +211,8 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc_types.h linux-7.3-rc1-
  /**
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-09-26 14:40:23.346178636 +0100
-@@ -105,6 +105,36 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-10-10 00:59:16.200441157 +0100
+@@ -105,6 +105,32 @@
  	return transaction_type;
  }
  
@@ -252,27 +220,23 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c lin
 + * Pulse root latch and poll secondary AUX to confirm physical panel presence
 + * even when the secondary link reports HPD low.
 + */
-+static bool tiled_secondary_poll_aux(struct dc_link *link,
-+				 struct dc_link *root_link)
++static bool tiled_secondary_poll_aux(struct dc_link *link, struct dc_link *root_link)
 +{
 +	uint8_t dpcd_rev;
-+	int retries;
++	int i;
 +
 +	if (!link || !link->ddc)
 +		return false;
 +
-+	/* Pulse root latch to keep the secondary TCON AUX interface alive */
-+	if (root_link)
-+		link_apple_5k_root_panel_latch_set(root_link);
++	/* On 5K iMacs, root_link is guaranteed to exist */
++	link_apple_5k_root_panel_latch_set(root_link);
 +
 +	/* Poll up to 300 ms (60 retries * 5 ms) */
-+	for (retries = 0; retries < 60; retries++) {
-+		dpcd_rev = 0;
-+		if (core_link_read_dpcd(link, DP_DPCD_REV, &dpcd_rev, sizeof(dpcd_rev)) == DC_OK &&
-+		    dpcd_rev != 0)
++	for (i = 0; i < 60; i++) {
++		if (core_link_read_dpcd(link, DP_DPCD_REV, &dpcd_rev, 1) == DC_OK && dpcd_rev)
 +			return true;
 +
-+		fsleep(5000); /* 5 ms settle window between AUX probes */
++		fsleep(5000);
 +	}
 +
 +	return false;
@@ -281,7 +245,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c lin
  static enum signal_type get_basic_signal_type(struct graphics_object_id encoder,
  					      struct graphics_object_id downstream)
  {
-@@ -218,7 +248,8 @@
+@@ -218,7 +244,8 @@
  			 * we assume signal is DVI; it could be corrected
  			 * to HDMI after dongle detection
  			 */
@@ -291,33 +255,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c lin
  				result = SIGNAL_TYPE_DVI_SINGLE_LINK;
  		}
  		break;
-@@ -968,6 +999,14 @@
- 				(link->ep_type == DISPLAY_ENDPOINT_USB4_DPIA &&
- 				!link->dc->config.enable_dpia_pre_training)) {
- 			destrictive = false;
-+		} else if (dc_link_is_apple_5k_secondary(link)) {
-+			/*
-+			 * Some internal tiled DP secondary tiles report HPD low during
-+			 * detection, but are already proven present by bounded AUX
-+			 * probing. Use the non-destructive capability path for
-+			 * validation, as with other internal panel paths.
-+			 */
-+			destrictive = false;
- 		} else if (link_dp_get_encoding_format(&max_link_cap) ==
- 				DP_8b_10b_ENCODING) {
- 			if (link->dpcd_caps.is_mst_capable ||
-@@ -1607,8 +1646,8 @@
- 
- 		return true;
- 	}
--
--
-+	
-+	
- 	if (link_get_hpd_state(link)) {
- 		*type = dc_connection_single;
- 		/* TODO: need to do the actual detection */
-@@ -1621,6 +1660,16 @@
+@@ -1621,6 +1648,16 @@
  		}
  	}
  
