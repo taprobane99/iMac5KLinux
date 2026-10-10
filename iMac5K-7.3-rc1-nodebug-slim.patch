@@ -211,41 +211,8 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc_types.h linux-7.3-rc1-
  /**
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-10-10 00:59:16.200441157 +0100
-@@ -105,6 +105,32 @@
- 	return transaction_type;
- }
- 
-+/*
-+ * Pulse root latch and poll secondary AUX to confirm physical panel presence
-+ * even when the secondary link reports HPD low.
-+ */
-+static bool tiled_secondary_poll_aux(struct dc_link *link, struct dc_link *root_link)
-+{
-+	uint8_t dpcd_rev;
-+	int i;
-+
-+	if (!link || !link->ddc)
-+		return false;
-+
-+	/* On 5K iMacs, root_link is guaranteed to exist */
-+	link_apple_5k_root_panel_latch_set(root_link);
-+
-+	/* Poll up to 300 ms (60 retries * 5 ms) */
-+	for (i = 0; i < 60; i++) {
-+		if (core_link_read_dpcd(link, DP_DPCD_REV, &dpcd_rev, 1) == DC_OK && dpcd_rev)
-+			return true;
-+
-+		fsleep(5000);
-+	}
-+
-+	return false;
-+}
-+
- static enum signal_type get_basic_signal_type(struct graphics_object_id encoder,
- 					      struct graphics_object_id downstream)
- {
-@@ -218,7 +244,8 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-10-10 15:44:15.981963821 +0100
+@@ -218,7 +218,8 @@
  			 * we assume signal is DVI; it could be corrected
  			 * to HDMI after dongle detection
  			 */
@@ -255,19 +222,21 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c lin
  				result = SIGNAL_TYPE_DVI_SINGLE_LINK;
  		}
  		break;
-@@ -1621,6 +1648,16 @@
+@@ -1621,6 +1622,18 @@
  		}
  	}
  
 +	/*
-+	 * Some internal tiled DP secondary tiles share panel presence with an eDP root
++ 	 * Some internal tiled DP secondary tiles share panel presence with an eDP root
 +	 * and may report HPD low. If a bounded AUX probe proves the secondary is
 +	 * present, treat it as connected.
-+	 */
++	 * and may report HPD low. Wake the TCON directly via the root link's DPCD.
++ 	 */
 +	if (*type == dc_connection_none &&
-+	    dc_link_is_apple_5k_secondary(link) &&
-+	    tiled_secondary_poll_aux(link, link->tiled_peer))
-+		*type = dc_connection_single;
++	    dc_link_is_apple_5k_secondary(link)) {
++		link_apple_5k_root_panel_latch_set(link->tiled_peer);
++ 		*type = dc_connection_single;
++	}
 +
  	return true;
  }
