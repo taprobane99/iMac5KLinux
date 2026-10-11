@@ -1,7 +1,7 @@
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-10-10 18:25:14.244879148 +0100
-@@ -1563,6 +1563,36 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-10-11 23:08:43.414159681 +0100
+@@ -1563,6 +1563,33 @@
  	dm->cached_state = NULL;
  }
  
@@ -10,15 +10,12 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-
 +static void amdgpu_dm_apple5k_unlatch_on_shutdown(struct amdgpu_device *adev)
 +{
 +	const uint8_t zeros[3] = { 0 };
-+	struct dc *dc;
 +
-+	if (!adev || !adev->dm.dc)
++	if (!adev->dm.dc)
 +		return;
 +
-+	dc = adev->dm.dc;
-+
-+	for (int i = 0; i < dc->link_count; i++) {
-+		struct dc_link *link = dc->links[i];
++	for (int i = 0; i < adev->dm.dc->link_count; i++) {
++		struct dc_link *link = adev->dm.dc->links[i];
 +
 +		if (dc_link_is_apple_5k_secondary(link)) {
 +			/* Clear Boot Camp tables and unlatch secondary tile */
@@ -38,7 +35,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-
  static int dm_suspend(struct amdgpu_ip_block *ip_block)
  {
  	struct amdgpu_device *adev = ip_block->adev;
-@@ -1625,6 +1655,8 @@
+@@ -1625,6 +1652,8 @@
  
  	amdgpu_dm_hpd_rx_irq_work_suspend(dm);
  
@@ -47,7 +44,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-
  	dc_set_power_state(dm->dc, DC_ACPI_CM_POWER_STATE_D3);
  
  	if (dm->dc->caps.ips_support && adev->in_s0ix)
-@@ -4979,6 +5011,14 @@
+@@ -4979,6 +5008,14 @@
  		 * crtc_sync_master.multi_sync_enabled flag
  		 * For now it's set to false
  		 */
@@ -64,23 +61,16 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-
  	set_master_stream(context->streams, context->stream_count);
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-10-10 18:41:23.400723555 +0100
-@@ -2473,7 +2473,13 @@
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-10-11 22:56:44.469819255 +0100
+@@ -2473,7 +2473,6 @@
  	if ((mode->flags & DRM_MODE_FLAG_INTERLACE) ||
  			(mode->flags & DRM_MODE_FLAG_DBLSCAN))
  		return result;
 -
-+	/* Restrict Apple 5K secondary tile to its native resolution to match the primary. */
-+	if (dc_link_is_apple_5k_secondary(aconnector->dc_link) && connector->has_tile) {
-+		if (mode->hdisplay == connector->tile_h_size &&
-+		    mode->vdisplay == connector->tile_v_size)
-+			return MODE_OK;
-+		return MODE_PANEL;
-+	}
  	/*
  	 * Only run this the first time mode_valid is called to initilialize
  	 * EDID mgmt
-@@ -3450,7 +3456,12 @@
+@@ -3450,7 +3449,12 @@
  	}
  
  	connector_type = to_drm_connector_type(link->connector_signal, link->link_id.id);
@@ -199,7 +189,7 @@ diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/dc_types.h linux-7.3-rc1-
  /**
 diff -urN linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c
 --- linux-7.3-rc1/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-08-30 21:34:40.000000000 +0100
-+++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-10-10 19:04:10.064826190 +0100
++++ linux-7.3-rc1-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-10-11 23:21:36.961718832 +0100
 @@ -218,8 +218,9 @@
  			 * we assume signal is DVI; it could be corrected
  			 * to HDMI after dongle detection
