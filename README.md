@@ -56,7 +56,7 @@ To install Speaker tuning (flat frequency response +/- 4dB) I made by hand using
 
 <img width="600" alt="Screenshot From 2026-09-20 14-38-19" src="https://github.com/user-attachments/assets/9d2a066f-663d-4ba8-994f-eb8ec3fba7dd" />
 
-You also need to install Pavucontrol `sudo apt install pavucontrol` to set 4 channels as output (Configuration tab), and set master system volume "Built-in Audio Analogue Surround 4.0" to 80% (Output Devices tab). In Ubuntu audio settings choose "iMac Speakers".
+You also need to install Pavucontrol `sudo apt install pavucontrol` to set 4 channels as output (Configuration tab), and set master system volume "Built-in Audio Analogue Surround 4.0" to 79% (Output Devices tab). In Ubuntu audio settings choose "iMac Speakers".
 
 <img width="600" alt="image" src="https://github.com/user-attachments/assets/9582ea63-e0ce-40f9-a59e-b0b105edfa54" />
 
