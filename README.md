@@ -33,25 +33,28 @@ Models confirmed working:
 * ✅ **Working**: Tiled 5K display working with patch.
 * 🛠️ **Work in Progress**: Vega under investigation.
 * ❓ **Needs Confirmation**: Hardware untested; requires verification whether Display Core (`amdgpu.dc=1`) operates stably on GCN 1.
-* ➖ **Use T2 Linux**: 2020 models use a non-tiled single-stream eDP panel (DSC). T2 Linux now has 5K support https://t2linux.org/ .
+* ➖ **Use T2 Linux**: T2 Linux now has 5K support https://t2linux.org/ .
 
 ## Screen tearing
 
-There may be small tearing artifacts down the centre of the screen.
-This is fixed on Ubuntu if you run `iMac5K-MutterTearFix-Ubuntu.sh`.
+Screen tearing artifacts down the centre of the screen are fixed on Ubuntu if you run `iMac5K-MutterTearFix-Ubuntu.sh`.
 
-## Hardware Quirks
-`iMac5K-GRUBParams.sh` to fix GPU power management problem that causes slow boot/shutdown and some apps not opening.
+## Boot environment
 
-`iMac5K-500nitsFix.sh` to fix max brightness to 500 nits instead of 400 nits using a custom ACPI table
+The Plymouth boot splash now supports tiled displays. On Ubuntu this can be tested using `iMac5K-PlymouthTest-Ubuntu.sh`.
 
-`iMac5K-GRUBFontSize-Ubuntu.sh` fixes tiny text in the GRUB menu and root shell.
+To fix tiny text in the GRUB menu and root shell run `iMac5K-GRUBFontSize-Ubuntu.sh`.
 
-`GPU-ToggleButton.ini` can be loaded in to the Custom Command Toggle Gnome Extension (https://github.com/StorageB/custom-command-toggle). It appears in Quick Settings. It will default to power saving mode, and switch to a higher performance mode when toggled on.
+## GPU Quirks
+To fix GPU power management problem that causes slow boot/shutdown and some apps not opening run `iMac5K-GRUBParams.sh`.
+
+To fix max brightness to 500 nits instead of 400 nits using a custom ACPI table run `iMac5K-500nitsFix.sh`.
+
+To control GPU power mode `GPU-ToggleButton.ini` can be loaded in to the Custom Command Toggle Gnome Extension (https://github.com/StorageB/custom-command-toggle). It appears in Quick Settings. It will default to power saving mode, and switch to a higher performance mode when toggled on.
 
 ## Audio
 
-`iMacAudioInstall.sh` to install Speaker tuning (flat frequency response +/- 4dB) I made by hand using a UMIK-1 measurement microphone. Tuned on late 2015 iMac using the Asahi Audio method.
+To install Speaker tuning (flat frequency response +/- 4dB) I made by hand using a UMIK-1 measurement microphone run `iMacAudioInstall.sh`. Tuned on late 2015 iMac using the Asahi Audio method.
 
 <img width="600" alt="Screenshot From 2026-09-20 14-38-19" src="https://github.com/user-attachments/assets/9d2a066f-663d-4ba8-994f-eb8ec3fba7dd" />
 
@@ -63,13 +66,13 @@ Note: if you have a 2017-2019 iMac you will need to install this first: https://
 
 ## Wide Gamut Colour
 
-`iMac5K-WideGamutColour.sh` correctly sets Ubuntu to use the wide gamut colourspace (DCI-P3) available with the iMac display.
+To set Ubuntu to use the wide gamut colourspace (DCI-P3) available with the iMac display run `iMac5K-WideGamutColour.sh`.
 
 ## Font Rendering
 
-Ubuntu/Gnome still uses outline font hinting on HiDPI displays. Some non-GTK apps still apply subpixel-antialiasing, and font hinting on HiDPI displays. `iMac5K-FontRenderingFix.sh` fixes those problems.
+Ubuntu/Gnome still uses outline font hinting on HiDPI displays. Some non-GTK apps still apply subpixel-antialiasing, and font hinting on HiDPI displays. To fix these problems run `iMac5K-FontRenderingFix.sh`.
 
-## Thunderbolt dock USB ports
+## Belkin Thunderbolt dock USB ports
 
 These kernel parameters allow access to the USB ports/SD card reader/headphone jack on my Belkin TB3 Dock Pro (might work for other docks)
 
