@@ -30,7 +30,7 @@ Models confirmed working:
 **Legend:**
 * ✅ **Working**: Tiled 5K display working with patch.
 * 🛠️ **Work in Progress**: Vega under investigation.
-* ❓ **Needs Confirmation**: Hardware untested; requires verification whether Display Core (`amdgpu.dc=1`) operates stably on GCN 1.
+* ❓ **Needs Confirmation**: Should work from Kernel 7.3 onwards thanks to work by Valve on older GPUs.
 * ➖ **Use T2 Linux**: T2 Linux now has 5K support https://t2linux.org/ .
 
 ## Screen tearing
