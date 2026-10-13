@@ -30,7 +30,7 @@ Models confirmed working:
 **Legend:**
 * ✅ **Working**: Tiled 5K display working with patch.
 * 🛠️ **Work in Progress**: Vega under investigation.
-* ❓ **Needs Confirmation**: Should work from Kernel 7.3 onwards thanks to work by Valve on older GPUs.
+* ❓ **Needs Confirmation**: Should work from Kernel 7.3 + Mesa 26.3 onwards thanks to work by Valve on older GPUs.
 * ➖ **Use T2 Linux**: T2 Linux now has 5K support https://t2linux.org/ .
 
 ## Screen tearing
