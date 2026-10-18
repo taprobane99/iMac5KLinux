@@ -23,15 +23,14 @@ Models confirmed working:
 | **Mid 2017** | iMac18,3 | Pro 570 / 575 / 580 (GCN 4) | ✅ |
 | **2019** | iMac19,1 | Pro 570X / 575X / 580X (GCN 4) | ✅ |
 | **2019** | iMac19,1 | Pro Vega 48 (GCN 5) | 🛠️ |
-| **2020** | iMac20,1 | Pro 5300 / 5500 XT (RDNA 1) | ➖ |
-| **2020** | iMac20,2 | Pro 5700 / 5700 XT (RDNA 1) | ➖ |
+| **2020** | iMac20,1 | Pro 5300 / 5500 XT (RDNA 1) | 🛠️ |
+| **2020** | iMac20,2 | Pro 5700 / 5700 XT (RDNA 1) | 🛠️ |
 | **2017 (iMac Pro)** | iMacPro1,1 | Pro Vega 56 / 64 / 64X (GCN 5) | 🛠️ |
 
 **Legend:**
 * ✅ **Working**: Tiled 5K display working with patch.
-* 🛠️ **Work in Progress**: Vega under investigation.
+* 🛠️ **Work in Progress**: Vega and 2020 iMac under investigation.
 * ❓ **Needs Confirmation**: Should work from Kernel 7.3 + Mesa 26.3 onwards thanks to work by Valve.
-* ➖ **Use T2 Linux**: T2 Linux now has 5K support https://t2linux.org/ .
 
 ## Screen tearing
 
