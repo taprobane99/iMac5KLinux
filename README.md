@@ -93,4 +93,4 @@ Please add contributions via opening an Issue. There are sure to be other iMac q
 
 ## Credit
 
-Thanks to https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-logging which I used to generate my 7.0 patch. My new 7.3 patch is reduced to 85 lines of human-edited code. At some point hopefully this will be mainlined.
+Thanks to https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-logging which I used to generate my 7.0 patch. My new 7.3 patch is reduced to 85 lines of human-edited code. Thanks to https://github.com/MarkPronkin/ and https://github.com/ahmadtv for input, code review, feedback. At some point hopefully this will be mainlined.
