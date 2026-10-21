@@ -2,7 +2,7 @@
 
 <img width="600" alt="Screenshot From 2026-10-21 22-34-27" src="https://github.com/user-attachments/assets/dfa67778-5760-4ba8-979a-ed5703acc53f" />
 
-Intel 5K iMacs can only use 4K resolution with the existing Linux kernel. This 52 line patch properly activates the 5K tiling mode that is used in macOS.
+Intel 5K iMacs can only use 4K resolution with the existing Linux kernel. This 50 line patch properly activates the 5K tiling mode that is used in macOS.
 
 Simple one-click script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kernel on iMacs, alongside your existing kernel.
 
@@ -95,4 +95,4 @@ Please add contributions via opening an Issue. There are sure to be other iMac q
 
 ## Credit
 
-Thanks to the AI-assisted (Claude) discovery at https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-logging which I used to generate my 1,700 line kernel 7.0 patch. My new kernel 7.3 patch is reduced to 52 lines with a combination of human-editing and AI suggestions (Google Gemini). Thanks to Timur Kristóf, https://github.com/MarkPronkin/, and https://github.com/ahmadtv for input, code review, feedback. At some point hopefully this will be mainlined.
+Thanks to the AI-assisted (Claude) discovery at https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-logging which I used to generate my 1,500 line kernel 7.0 patch. My new kernel 7.3 patch is reduced to 50 lines with a combination of human-editing and AI suggestions (Google Gemini). Thanks to Timur Kristóf, https://github.com/MarkPronkin/, and https://github.com/ahmadtv for input, code review, feedback. At some point hopefully this will be mainlined.
