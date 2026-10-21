@@ -1,10 +1,10 @@
 ## 5K Kernel
 
-Intel 5K iMacs can only use 4K resolution with the existing Linux kernel. This 85 line human-edited patch properly activates the 5K tiling mode that is used in macOS.
+Intel 5K iMacs can only use 4K resolution with the existing Linux kernel. This 52 line patch properly activates the 5K tiling mode that is used in macOS.
 
 Simple one-click script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kernel on iMacs, alongside your existing kernel. You can switch back to your existing kernel from the GRUB menu at boot.
 
-Works on Ubuntu 26.04 LTS and 26.10. May work on Mint, Zorin, and other Debian distros.
+Works on Ubuntu 26.04 LTS and 26.10. May work on Mint, Zorin, and other Debian distros. Kernel 7.3+ and Mesa 26.3+ recommended.
 
 Works on all pre-2020 5K iMacs except those with Vega GPUs.
 
@@ -22,14 +22,14 @@ Models confirmed working:
 | **Late 2015** | iMac17,1 | R9 M395 / M395X (GCN 3) | ✅ |
 | **Mid 2017** | iMac18,3 | Pro 570 / 575 / 580 (GCN 4) | ✅ |
 | **2019** | iMac19,1 | Pro 570X / 575X / 580X (GCN 4) | ✅ |
-| **2019** | iMac19,1 | Pro Vega 48 (GCN 5) | 🛠️ |
-| **2020** | iMac20,1 | Pro 5300 / 5500 XT (RDNA 1) | 🛠️ |
-| **2020** | iMac20,2 | Pro 5700 / 5700 XT (RDNA 1) | 🛠️ |
-| **2017 (iMac Pro)** | iMacPro1,1 | Pro Vega 56 / 64 / 64X (GCN 5) | 🛠️ |
+| **2019** | iMac19,1 | Pro Vega 48 (GCN 5) | ➖ |
+| **2020** | iMac20,1 | Pro 5300 / 5500 XT (RDNA 1) | ➖ |
+| **2020** | iMac20,2 | Pro 5700 / 5700 XT (RDNA 1) | ➖ |
+| **2017 (iMac Pro)** | iMacPro1,1 | Pro Vega 56 / 64 / 64X (GCN 5) | ➖ |
 
 **Legend:**
 * ✅ **Working**: Tiled 5K display working with patch.
-* 🛠️ **Work in Progress**: Vega and 2020 iMac under investigation.
+* ➖ **Needs Additional Work**: Requires extra methods to activate 5K. You could try using this patch as a base.
 * ❓ **Needs Confirmation**: Should work from Kernel 7.3 + Mesa 26.3 onwards thanks to work by Valve.
 
 ## Screen tearing
@@ -93,4 +93,4 @@ Please add contributions via opening an Issue. There are sure to be other iMac q
 
 ## Credit
 
-Thanks to https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-logging which I used to generate my 7.0 patch. My new 7.3 patch is reduced to 85 lines of human-edited code. Thanks to https://github.com/MarkPronkin/ and https://github.com/ahmadtv for input, code review, feedback. At some point hopefully this will be mainlined.
+Thanks to the AI-assisted (Claude) discovery at https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-logging which I used to generate my 1,700 line kernel 7.0 patch. My new kernel 7.3 patch is reduced to 52 lines with a combination of human-editing and AI suggestions (Google Gemini). Thanks to Timur Kristóf, https://github.com/MarkPronkin/, and https://github.com/ahmadtv for input, code review, feedback. At some point hopefully this will be mainlined.
