@@ -52,9 +52,9 @@ get_used_mb() {
 fetch_url() {
     local url="$1"
     if command -v wget &> /dev/null; then
-        wget -qO- "$url" 2>/dev/null || true
+        wget -qO- --timeout=10 --tries=2 "$url" 2>/dev/null || true
     elif command -v curl &> /dev/null; then
-        curl -fsSL "$url" 2>/dev/null || true
+        curl -fsSL --connect-timeout 10 --max-time 15 "$url" 2>/dev/null || true
     else
         error "Neither 'wget' nor 'curl' is installed to query remote versions."
         info "Please run: sudo apt update && sudo apt install wget"
@@ -207,50 +207,38 @@ case $choice in
         USE_GIT=true
         # Launchpad repositories use the first word of the Ubuntu codename ('stonking' for 26.10)
         GIT_URL="https://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux/+git/stonking"
+        GIT_BRANCH="master"
+        UBUNTU_PKG_VER=""
 
-        # Check 'master-next' (active Ubuntu stable updates branch) first, fallback to 'master'
-        GIT_BRANCH="master-next"
-        MAKEFILE_HEADER=$(fetch_url "${GIT_URL}/plain/Makefile?h=${GIT_BRANCH}" | head -n 10)
-        if [ -z "${MAKEFILE_HEADER}" ]; then
-            GIT_BRANCH="master"
-            MAKEFILE_HEADER=$(fetch_url "${GIT_URL}/plain/Makefile?h=${GIT_BRANCH}" | head -n 10)
+        # Tier 1: Query Launchpad's official REST API (avoids git.launchpad.net cgit 503 errors)
+        LP_API_URL="https://api.launchpad.net/1.0/ubuntu/+archive/primary?ws.op=getPublishedSources&exact_match=true&source_name=linux&distro_series=/1.0/ubuntu/stonking&status=Published"
+        LP_JSON=$(fetch_url "${LP_API_URL}")
+        if [ -n "${LP_JSON}" ]; then
+            UBUNTU_PKG_VER=$(echo "${LP_JSON}" | grep -o '"source_package_version": *"[^"]*"' | head -n 1 | cut -d'"' -f4 || true)
         fi
 
-        if [ -z "${MAKEFILE_HEADER}" ]; then
-            error "Could not reach Ubuntu 26.10 repository on Launchpad."
-            info "Please check your internet connection and try again."
-            exit 1
+        # Tier 2: Fallback to 'git ls-remote' against the Turnip Git backend if git is installed
+        if [ -z "${UBUNTU_PKG_VER}" ] && command -v git &> /dev/null; then
+            UBUNTU_PKG_VER=$(git ls-remote --tags --refs "${GIT_URL}" "refs/tags/Ubuntu-*" 2>/dev/null \
+                | awk -F'refs/tags/Ubuntu-' '{print $2}' \
+                | sed 's/^[0-9]\+\.[0-9]\+-//' \
+                | tr '_' '~' \
+                | sort -V | tail -n 1 || true)
         fi
 
-        # Extract VERSION, PATCHLEVEL, SUBLEVEL, and EXTRAVERSION from remote Makefile
-        K_VER=$(echo "${MAKEFILE_HEADER}" | awk -F' = ' '/^VERSION =/ {print $2}' | tr -d '[:space:]')
-        K_PATCH=$(echo "${MAKEFILE_HEADER}" | awk -F' = ' '/^PATCHLEVEL =/ {print $2}' | tr -d '[:space:]')
-        K_SUB=$(echo "${MAKEFILE_HEADER}" | awk -F' = ' '/^SUBLEVEL =/ {print $2}' | tr -d '[:space:]')
-        K_EXTRA=$(echo "${MAKEFILE_HEADER}" | awk -F' =' '/^EXTRAVERSION =/ {print $2}' | tr -d '[:space:]')
-
-        BASE_KVER="${K_VER}.${K_PATCH}"
-        if [ -n "${K_SUB}" ] && [ "${K_SUB}" != "0" ]; then
-            FULL_KVER="${BASE_KVER}.${K_SUB}${K_EXTRA}"
-        else
-            FULL_KVER="${BASE_KVER}.0${K_EXTRA}"
-        fi
-
-        # Also attempt to read the exact Ubuntu package version from debian.master/changelog
-        CHANGELOG_LINE=$(fetch_url "${GIT_URL}/plain/debian.master/changelog?h=${GIT_BRANCH}" | head -n 1)
-        UBUNTU_PKG_VER=$(echo "${CHANGELOG_LINE}" | sed -n 's/^linux (\([^)]*\)).*/\1/p')
-
-        # Set KERNEL_VERSION for directory naming and PATCH_VERSION for matching patch file
-        KERNEL_VERSION="ubuntu-26.10-${FULL_KVER}"
-        if [[ "${K_EXTRA}" =~ ^-rc[0-9]+ ]]; then
-            PATCH_VERSION="${BASE_KVER}${K_EXTRA}"
-        else
-            PATCH_VERSION="${BASE_KVER}.0"
-        fi
-
+        # Extract upstream kernel version from Ubuntu package version (e.g., 7.3.0-9.9 -> 7.3.0)
         if [ -n "${UBUNTU_PKG_VER}" ]; then
+            FULL_KVER="${UBUNTU_PKG_VER%%-*}"
+            BASE_KVER=$(echo "${FULL_KVER}" | cut -d. -f1,2)
+            PATCH_VERSION="${BASE_KVER}.0"
+            KERNEL_VERSION="ubuntu-26.10-${FULL_KVER}"
             success "Detected Ubuntu 26.10 Kernel: ${BOLD}Linux ${FULL_KVER}${RESET} ${DIM}(Package: ${UBUNTU_PKG_VER}, Branch: ${GIT_BRANCH})${RESET}"
         else
-            success "Detected Ubuntu 26.10 Kernel: ${BOLD}Linux ${FULL_KVER}${RESET} ${DIM}(Branch: ${GIT_BRANCH})${RESET}"
+            # Tier 3: Safe fallback to 7.3.0; exact version is read from local Makefile after cloning
+            FULL_KVER="7.3.0"
+            PATCH_VERSION="7.3.0"
+            KERNEL_VERSION="ubuntu-26.10-${FULL_KVER}"
+            info "Using Ubuntu 26.10 release baseline (${BOLD}Linux ${FULL_KVER}${RESET}); exact revision will be verified after cloning."
         fi
         ;;
     5)
@@ -326,7 +314,20 @@ print_step "Fetching and Extracting Linux Kernel Source"
 if [ "$USE_GIT" = true ]; then
     info "Cloning Ubuntu 26.10 kernel ('${GIT_BRANCH}' branch) from Launchpad..."
     git clone --depth 1 -b "${GIT_BRANCH}" "${GIT_URL}" "${SOURCE_DIR}"
-    success "Ubuntu 26.10 kernel repository cloned to 'linux-${KERNEL_VERSION}'."
+
+    # Confirm exact kernel & Ubuntu package version from the cloned source files
+    if [ -f "${SOURCE_DIR}/Makefile" ]; then
+        CLONED_KVER=$(make -s -C "${SOURCE_DIR}" kernelversion 2>/dev/null || true)
+        CLONED_PKG_VER=""
+        if [ -f "${SOURCE_DIR}/debian.master/changelog" ]; then
+            CLONED_PKG_VER=$(head -n 1 "${SOURCE_DIR}/debian.master/changelog" | sed -n 's/^linux (\([^)]*\)).*/\1/p' || true)
+        fi
+        if [ -n "${CLONED_KVER}" ]; then
+            success "Cloned Ubuntu 26.10 source: ${BOLD}Linux ${CLONED_KVER}${RESET} ${DIM}${CLONED_PKG_VER:+(Ubuntu package: ${CLONED_PKG_VER})}${RESET}"
+        fi
+    else
+        success "Ubuntu 26.10 kernel repository cloned to 'linux-${KERNEL_VERSION}'."
+    fi
 else
     if [ -f "${SCRIPT_DIR}/${KERNEL_TARBALL}" ]; then
         success "Found existing archive '${KERNEL_TARBALL}'. Skipping download."
@@ -437,7 +438,7 @@ success "Kernel configured! Target release name: ${BOLD}${FINAL_RELEASE}${RESET}
 # ==============================================================================
 CPU_THREADS=$(nproc)
 print_step "Compiling Kernel (Using ${CPU_THREADS} CPU Threads)"
-echo -e "  ${YELLOW}☕ Grab a coffee!${RESET} Compiling the Linux kernel takes ${BOLD}50 to 70 minutes${RESET}"
+echo -e "  ${YELLOW}☕ Grab a coffee!${RESET} Compiling the Linux kernel takes ${BOLD}15 to 45 minutes${RESET}"
 echo -e "     depending on your processor. Your iMac's fan will likely spin up—"
 echo -e "     this is completely normal."
 echo ""
