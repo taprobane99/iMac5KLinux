@@ -1,18 +1,18 @@
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 --- linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-10-21 22:04:08.270939102 +0100
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-10-22 19:54:37.256728253 +0100
 @@ -1565,6 +1565,29 @@
  	dm->cached_state = NULL;
  }
  
 +/* Unlatch Apple 5K panel tiles and reset DPCD state on suspend/shutdown.
 + * This returns the TCON to single-pipe mode so the EFI boot logo is not skewed on reboot. */
-+static void amdgpu_dm_apple5k_unlatch(struct amdgpu_device *adev)
++static void amdgpu_dm_apple5k_unlatch(struct dc *dc)
 +{
 +	const uint8_t zeros[3] = { 0 };
 +
-+	for (int i = 0; i < adev->dm.dc->link_count; i++) {
-+		struct dc_link *link = adev->dm.dc->links[i];
++	for (int i = 0; i < dc->link_count; i++) {
++		struct dc_link *link = dc->links[i];
 +
 +		if (dc_link_is_apple_5k_secondary(link)) {
 +			/* Clear Boot Camp source table (0x310), eDP config (0x10A), and secondary tile latch (0x4F1) */
@@ -35,7 +35,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-
  
  	amdgpu_dm_hpd_rx_irq_work_suspend(dm);
  
-+	amdgpu_dm_apple5k_unlatch(adev);
++	amdgpu_dm_apple5k_unlatch(dm->dc);
 +
  	dc_set_power_state(dm->dc, DC_ACPI_CM_POWER_STATE_D3);
  
@@ -156,7 +156,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/dc.h linux-7.3-patched/driver
  	enum signal_type sink_signal;
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c
 --- linux-7.3/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-10-21 20:38:22.063201892 +0100
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-10-22 19:48:11.401027692 +0100
 @@ -218,7 +218,8 @@
  			 * we assume signal is DVI; it could be corrected
  			 * to HDMI after dongle detection
@@ -175,7 +175,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7
 + 	 * tile via the root eDP link's DPCD (0x4F1) and force a single-sink connection. */
 +	if (*type == dc_connection_none &&
 +	    dc_link_is_apple_5k_secondary(link)) {
-+		core_link_write_dpcd(link->tiled_peer, 0x4F1, &(uint8_t){1}, 1);
++		core_link_write_dpcd(link->tiled_peer, 0x4F1, &(const uint8_t){1}, 1);
 +		*type = dc_connection_single;
 +	}
 +
