@@ -1,6 +1,23 @@
+diff -urN linux-7.3/drivers/gpu/drm/amd/amdgpu/amdgpu_gmc.c linux-7.3-patched/drivers/gpu/drm/amd/amdgpu/amdgpu_gmc.c
+--- linux-7.3/drivers/gpu/drm/amd/amdgpu/amdgpu_gmc.c	2026-10-19 00:14:58.000000000 +0100
++++ linux-7.3-patched/drivers/gpu/drm/amd/amdgpu/amdgpu_gmc.c	2026-10-25 10:45:25.839786052 +0000
+@@ -1098,7 +1098,12 @@
+ 	} else {
+ 		size = amdgpu_gmc_get_vbios_fb_size(adev);
+ 
+-		if (adev->mman.keep_stolen_vga_memory)
++		/* Apple 5K iMacs report one 2560x2880 tile in VIEWPORT_SIZE
++		 * while scanning out up to 64M across the relocated EFI framebuffer. */
++		if (adev->pdev->subsystem_vendor == PCI_VENDOR_ID_APPLE &&
++		    size == (2560 * 2880 * 4))
++			size = 64U * 1024 * 1024;
++		else if (adev->mman.keep_stolen_vga_memory)
+ 			size = max(size, (unsigned)AMDGPU_VBIOS_VGA_ALLOCATION);
+ 	}
+ 
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 --- linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-10-22 19:54:37.256728253 +0100
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-10-24 20:35:52.417035443 +0100
 @@ -1565,6 +1565,29 @@
  	dm->cached_state = NULL;
  }
@@ -156,7 +173,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/dc.h linux-7.3-patched/driver
  	enum signal_type sink_signal;
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c
 --- linux-7.3/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-10-22 19:48:11.401027692 +0100
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-10-24 20:35:36.986253693 +0100
 @@ -218,7 +218,8 @@
  			 * we assume signal is DVI; it could be corrected
  			 * to HDMI after dongle detection
