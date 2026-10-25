@@ -8,7 +8,7 @@ Simple one-click script `iMac5K-KernelInstall.sh` to download, build, and instal
 
 Works on Ubuntu 26.04 LTS and 26.10. May work on Mint, Zorin, and other Debian distros. Kernel 7.3+ and Mesa 26.3+ recommended.
 
-Works on all 5K iMacs except the 2019 iMac with Vega GPU, 2020 iMac and iMac Pro.
+Works on all 5K iMacs except the 2020 iMac and iMacs with VEGA GPUs.
 
 Needs 7GB Disk Space and 50-70 minutes compile time.
 
