@@ -20,7 +20,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/amdgpu/amdgpu_gmc.c linux-7.3-patched/dr
  
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 --- linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-10-25 13:42:24.084281660 +0000
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-10-26 19:39:04.261674917 +0000
 @@ -1565,6 +1565,35 @@
  	dm->cached_state = NULL;
  }
@@ -32,7 +32,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-
 + */
 +static void amdgpu_dm_apple5k_unlatch(struct dc *dc)
 +{
-+	const uint8_t zeros[3] = { 0 };
++	const u8 zeros[3] = { 0 };
 +
 +	for (int i = 0; i < dc->link_count; i++) {
 +		struct dc_link *link = dc->links[i];
@@ -86,22 +86,6 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-
  
  	bool frl_stream_found = false;
  
-@@ -5009,6 +5053,15 @@
- 		 * crtc_sync_master.multi_sync_enabled flag
- 		 * For now it's set to false
- 		 */
-+		/*
-+		 * Enable per-frame CRTC reset on DCE >= 12 so
-+		 * set_master_stream() keeps tiles genlocked (DCE < 12 uses
-+		 * one-shot modeset timing sync and has a broken per-frame
-+		 * reset path).
-+		 */
-+		if (context->streams[i]->link->tiled_peer &&
-+		    context->streams[i]->ctx->dce_version >= DCE_VERSION_12_0)
-+			context->streams[i]->triggered_crtc_reset.enabled = true;
- 	}
- 
- 	set_master_stream(context->streams, context->stream_count);
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c
 --- linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-10-19 00:14:58.000000000 +0100
 +++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c	2026-10-25 12:44:15.162289356 +0000
@@ -120,8 +104,8 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_connector.c 
  			dm->ddev,
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c
 --- linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-10-25 13:26:48.010798937 +0000
-@@ -97,6 +97,20 @@
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-10-26 20:21:41.678255988 +0000
+@@ -97,6 +97,21 @@
  }
  EXPORT_IF_KUNIT(edid_extract_panel_id);
  
@@ -131,9 +115,10 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c li
 + */
 +static void dm_helpers_wire_tiled_peer(struct dc_link *link)
 +{
-+	uint32_t peer_index = link->link_index ^ 1;
++	u32 peer_index = link->link_index ^ 1;
 +
-+	if (peer_index < link->dc->link_count) {
++	if (link->ctx->dce_version < DCE_VERSION_12_0 &&
++	    peer_index < link->dc->link_count) {
 +		link->tiled_peer = link->dc->links[peer_index];
 +		link->tiled_peer->tiled_peer = link;
 +	}
@@ -142,7 +127,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c li
  STATIC_IFN_KUNIT void apply_edid_quirks(struct dc_link *link, struct edid *edid,
  			      struct dc_edid_caps *edid_caps)
  {
-@@ -147,6 +161,25 @@
+@@ -147,6 +162,25 @@
  		drm_dbg_driver(dev, "Hiding secondary tile on panel id %X\n", panel_id);
  		edid_caps->panel_patch.disable_second_tile = true;
  		break;
@@ -152,8 +137,8 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c li
 +	 * links to latch and synchronize both tiles, using connector_signal
 +	 * for role assignment as panel IDs can flip after wake.
 +	 * IDs (Root/Tile): iMac15,1 (AE01/02), iMac17,1 (AE05/06),
-+	 * iMac18,3 (AE11/12), iMac19,1 (AE25/26); TODO: iMacPro1,1 (AE1D/1E),
-+	 * iMac20,x (AE31/32).
++	 * iMac18,3 (AE11/12), iMac19,1 (AE25/26); TODO (DCE >= 12): iMac19,1
++	 * Vega, iMacPro1,1 (AE1D/1E), iMac20,x (AE31/32).
 +	 */
 +	case drm_edid_encode_panel_id('A', 'P', 'P', 0xAE01):
 +	case drm_edid_encode_panel_id('A', 'P', 'P', 0xAE02):
