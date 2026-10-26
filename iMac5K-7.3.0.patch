@@ -138,7 +138,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c li
 +	 * for role assignment as panel IDs can flip after wake.
 +	 * IDs (Root/Tile): iMac15,1 (AE01/02), iMac17,1 (AE05/06),
 +	 * iMac18,3 (AE11/12), iMac19,1 (AE25/26); TODO (DCE >= 12): iMac19,1
-+	 * Vega, iMacPro1,1 (AE1D/1E), iMac20,x (AE31/32).
++	 * Vega (AE25/26), iMacPro1,1 (AE1D/1E), iMac20,x (AE31/32).
 +	 */
 +	case drm_edid_encode_panel_id('A', 'P', 'P', 0xAE01):
 +	case drm_edid_encode_panel_id('A', 'P', 'P', 0xAE02):
