@@ -18,7 +18,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/amdgpu/gmc_v7_0.c linux-7.3-patched/driv
  	return size;
 diff -urN linux-7.3/drivers/gpu/drm/amd/amdgpu/gmc_v8_0.c linux-7.3-patched/drivers/gpu/drm/amd/amdgpu/gmc_v8_0.c
 --- linux-7.3/drivers/gpu/drm/amd/amdgpu/gmc_v8_0.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/amdgpu/gmc_v8_0.c	2026-11-01 19:56:50.006062888 +0000
++++ linux-7.3-patched/drivers/gpu/drm/amd/amdgpu/gmc_v8_0.c	2026-11-01 20:06:24.152320362 +0000
 @@ -1037,9 +1037,11 @@
  	} else {
  		u32 viewport = RREG32(mmVIEWPORT_SIZE);
@@ -27,7 +27,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/amdgpu/gmc_v8_0.c linux-7.3-patched/driv
 -			REG_GET_FIELD(viewport, VIEWPORT_SIZE, VIEWPORT_WIDTH) *
 -			4);
 +		size = REG_GET_FIELD(viewport, VIEWPORT_SIZE, VIEWPORT_HEIGHT) *
-+			RREG32(mmGRPH_PITCH) * 4;
++		       RREG32(mmGRPH_PITCH) * 4;
 +		if (size)
 +			size += RREG32(mmGRPH_PRIMARY_SURFACE_ADDRESS) -
 +				lower_32_bits(adev->gmc.vram_start);
@@ -36,7 +36,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/amdgpu/gmc_v8_0.c linux-7.3-patched/driv
  	return size;
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 --- linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-11-01 19:39:20.217655263 +0000
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-11-01 20:18:47.681267977 +0000
 @@ -1565,6 +1565,25 @@
  	dm->cached_state = NULL;
  }
@@ -48,7 +48,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-
 +	for (int i = 0; i < dc->link_count; i++) {
 +		struct dc_link *link = dc->links[i];
 +
-+		if (dc_link_is_apple_5k_secondary(link)) {
++		if (link->tiled_peer) {
 +			core_link_write_dpcd(link, DP_SOURCE_TABLE_REVISION, zeros, 3);
 +			core_link_write_dpcd(link, DP_EDP_CONFIGURATION_SET, zeros, 1);
 +			core_link_write_dpcd(link, 0x4F1, zeros, 1);
@@ -91,26 +91,8 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-
  	for (i = 0; i < params.stream_count; i++) {
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c
 --- linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-11-01 19:40:26.124077784 +0000
-@@ -97,6 +97,17 @@
- }
- EXPORT_IF_KUNIT(edid_extract_panel_id);
- 
-+static void dm_helpers_wire_tiled_peer(struct dc_link *link)
-+{
-+	u32 peer_index = link->link_index ^ 1;
-+
-+	if (link->ctx->dce_version < DCE_VERSION_12_0 &&
-+	    peer_index < link->dc->link_count) {
-+		link->tiled_peer = link->dc->links[peer_index];
-+		link->tiled_peer->tiled_peer = link;
-+	}
-+}
-+
- STATIC_IFN_KUNIT void apply_edid_quirks(struct dc_link *link, struct edid *edid,
- 			      struct dc_edid_caps *edid_caps)
- {
-@@ -147,6 +158,25 @@
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-11-01 20:22:05.684682552 +0000
+@@ -147,6 +147,28 @@
  		drm_dbg_driver(dev, "Hiding secondary tile on panel id %X\n", panel_id);
  		edid_caps->panel_patch.disable_second_tile = true;
  		break;
@@ -131,14 +113,17 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c li
 +	case drm_edid_encode_panel_id('A', 'P', 'P', 0xAE12):
 +	case drm_edid_encode_panel_id('A', 'P', 'P', 0xAE25):
 +	case drm_edid_encode_panel_id('A', 'P', 'P', 0xAE26):
-+		dm_helpers_wire_tiled_peer(link);
++		if (link->connector_signal == SIGNAL_TYPE_EDP &&
++		    link->ctx->dce_version < DCE_VERSION_12_0 &&
++		    (link->link_index ^ 1) < link->dc->link_count)
++			link->dc->links[link->link_index ^ 1]->tiled_peer = link;
 +		break;
  	default:
  		return;
  	}
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/dc.h linux-7.3-patched/drivers/gpu/drm/amd/display/dc/dc.h
 --- linux-7.3/drivers/gpu/drm/amd/display/dc/dc.h	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/dc.h	2026-11-01 19:41:01.465776276 +0000
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/dc.h	2026-11-01 20:21:48.459820473 +0000
 @@ -1991,6 +1991,7 @@
  	bool skip_implict_edp_power_control;
  	bool forced_psr_active;
@@ -147,38 +132,23 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/dc.h linux-7.3-patched/driver
  };
  
  struct dc {
-@@ -3187,6 +3188,12 @@
- void dc_sink_retain(struct dc_sink *sink);
- void dc_sink_release(struct dc_sink *sink);
- 
-+static inline bool dc_link_is_apple_5k_secondary(const struct dc_link *link)
-+{
-+	return link && link->tiled_peer &&
-+	       link->connector_signal == SIGNAL_TYPE_DISPLAY_PORT;
-+}
-+
- struct dc_sink_init_data {
- 	enum signal_type sink_signal;
- 	struct dc_link *link;
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c
 --- linux-7.3/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-11-01 19:41:46.344398904 +0000
-@@ -218,7 +218,8 @@
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-11-01 20:20:49.409293294 +0000
+@@ -218,7 +218,7 @@
  			 * we assume signal is DVI; it could be corrected
  			 * to HDMI after dongle detection
  			 */
 -			if (!dm_helpers_is_dp_sink_present(link))
-+			if (!dc_link_is_apple_5k_secondary(link) &&
-+			    !dm_helpers_is_dp_sink_present(link))
++			if (!link->tiled_peer && !dm_helpers_is_dp_sink_present(link))
  				result = SIGNAL_TYPE_DVI_SINGLE_LINK;
  		}
  		break;
-@@ -1621,6 +1622,12 @@
+@@ -1621,6 +1621,11 @@
  		}
  	}
  
-+	if (*type == dc_connection_none &&
-+	    dc_link_is_apple_5k_secondary(link)) {
++	if (*type == dc_connection_none && link->tiled_peer) {
 +		core_link_write_dpcd(link->tiled_peer, 0x4F1, &(const uint8_t){1}, 1);
 +		*type = dc_connection_single;
 +	}
@@ -188,13 +158,13 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7
  
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c
 --- linux-7.3/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c	2026-11-01 19:42:09.931200570 +0000
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c	2026-11-01 20:21:31.438956760 +0000
 @@ -1495,6 +1495,10 @@
  				link->dc->vendor_signature.data.raw,
  				sizeof(link->dc->vendor_signature.data.raw));
  	}
 +
-+	if (dc_link_is_apple_5k_secondary(link))
++	if (link->tiled_peer)
 +		core_link_write_dpcd(link, DP_SOURCE_TABLE_REVISION,
 +				     (const uint8_t[]){0x04, 0x1d, 0x03}, 3);
  }
@@ -202,12 +172,12 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capabi
  void dpcd_write_cable_id_to_dprx(struct dc_link *link)
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_phy.c linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_phy.c
 --- linux-7.3/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_phy.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_phy.c	2026-11-01 19:42:38.007964481 +0000
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_phy.c	2026-11-01 20:24:14.805648673 +0000
 @@ -50,6 +50,9 @@
  	if (link->sync_lt_in_progress)
  		return;
  
-+	if (!on && dc_link_is_apple_5k_secondary(link))
++	if (!on && link->tiled_peer)
 +		return;
 +
  	core_link_write_dpcd(link, DP_SET_POWER, &state,
