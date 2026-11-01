@@ -37,7 +37,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/amdgpu/gmc_v8_0.c linux-7.3-patched/driv
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 --- linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-10-19 00:14:58.000000000 +0100
 +++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-11-01 20:18:47.681267977 +0000
-@@ -1565,6 +1565,25 @@
+@@ -1565,6 +1565,23 @@
  	dm->cached_state = NULL;
  }
  
@@ -52,9 +52,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-
 +			core_link_write_dpcd(link, DP_SOURCE_TABLE_REVISION, zeros, 3);
 +			core_link_write_dpcd(link, DP_EDP_CONFIGURATION_SET, zeros, 1);
 +			core_link_write_dpcd(link, 0x4F1, zeros, 1);
-+
 +			core_link_write_dpcd(link->tiled_peer, 0x4F1, zeros, 1);
-+
 +			break;
 +		}
 +	}
@@ -98,9 +96,9 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c li
  		break;
 +	/*
 +	 * Workaround for Apple 27" 5K iMacs which expose a 2x1 tiled internal
-+	 * panel over an eDP root link and a secondary DP link. Wire the peer
-+	 * links to latch and synchronize both tiles, using connector_signal
-+	 * for role assignment as panel IDs can flip after wake.
++	 * panel over an eDP root link and a secondary DP link. Point the
++	 * secondary link to the root link to latch/unlatch the TCON via DPCD,
++	 * checking connector_signal as panel IDs can flip after wake.
 +	 * IDs (Root/Tile): iMac15,1 (AE01/02), iMac17,1 (AE05/06),
 +	 * iMac18,3 (AE11/12), iMac19,1 (AE25/26); TODO (DCE >= 12): iMac19,1
 +	 * Vega, iMacPro1,1 (AE1D/1E), iMac20,x (AE31/32).
