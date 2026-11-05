@@ -48,11 +48,11 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-
 +	for (int i = 0; i < dc->link_count; i++) {
 +		struct dc_link *link = dc->links[i];
 +
-+		if (link->tiled_peer) {
++		if (link->apple5k_peer) {
 +			core_link_write_dpcd(link, DP_SOURCE_TABLE_REVISION, zeros, 3);
 +			core_link_write_dpcd(link, DP_EDP_CONFIGURATION_SET, zeros, 1);
 +			core_link_write_dpcd(link, 0x4F1, zeros, 1);
-+			core_link_write_dpcd(link->tiled_peer, 0x4F1, zeros, 1);
++			core_link_write_dpcd(link->apple5k_peer, 0x4F1, zeros, 1);
 +			break;
 +		}
 +	}
@@ -114,7 +114,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c li
 +		if (link->connector_signal == SIGNAL_TYPE_EDP &&
 +		    link->ctx->dce_version < DCE_VERSION_12_0 &&
 +		    (link->link_index ^ 1) < link->dc->link_count)
-+			link->dc->links[link->link_index ^ 1]->tiled_peer = link;
++			link->dc->links[link->link_index ^ 1]->apple5k_peer = link;
 +		break;
  	default:
  		return;
@@ -126,7 +126,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/dc.h linux-7.3-patched/driver
  	bool skip_implict_edp_power_control;
  	bool forced_psr_active;
  	enum backlight_control_type backlight_control_type;
-+	struct dc_link *tiled_peer;
++	struct dc_link *apple5k_peer;
  };
  
  struct dc {
@@ -138,7 +138,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7
  			 * to HDMI after dongle detection
  			 */
 -			if (!dm_helpers_is_dp_sink_present(link))
-+			if (!link->tiled_peer && !dm_helpers_is_dp_sink_present(link))
++			if (!link->apple5k_peer && !dm_helpers_is_dp_sink_present(link))
  				result = SIGNAL_TYPE_DVI_SINGLE_LINK;
  		}
  		break;
@@ -146,8 +146,8 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7
  		}
  	}
  
-+	if (*type == dc_connection_none && link->tiled_peer) {
-+		core_link_write_dpcd(link->tiled_peer, 0x4F1, &(const uint8_t){1}, 1);
++	if (*type == dc_connection_none && link->apple5k_peer) {
++		core_link_write_dpcd(link->apple5k_peer, 0x4F1, &(const uint8_t){1}, 1);
 +		*type = dc_connection_single;
 +	}
 +
@@ -162,7 +162,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capabi
  				sizeof(link->dc->vendor_signature.data.raw));
  	}
 +
-+	if (link->tiled_peer)
++	if (link->apple5k_peer)
 +		core_link_write_dpcd(link, DP_SOURCE_TABLE_REVISION,
 +				     (const uint8_t[]){0x04, 0x1d, 0x03}, 3);
  }
@@ -175,7 +175,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_phy.c 
  	if (link->sync_lt_in_progress)
  		return;
  
-+	if (!on && link->tiled_peer)
++	if (!on && link->apple5k_peer)
 +		return;
 +
  	core_link_write_dpcd(link, DP_SET_POWER, &state,
