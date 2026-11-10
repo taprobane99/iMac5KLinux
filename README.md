@@ -4,7 +4,8 @@
 
 Intel 5K iMacs can only use 4K resolution with the existing Linux kernel. This 50 line patch properly activates the 5K tiling mode that is used in macOS.
 
-Simple one-click script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kernel on iMacs, alongside your existing kernel.
+Simple one-click script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kernel on iMacs, alongside your existing kernel. You need to install
+the normal OS first e.g. https://ubuntu.com/download/desktop
 
 Works on Ubuntu 26.04 LTS and 26.10. May work on Mint, Zorin, and other Debian distros. Kernel 7.3+ and Mesa 26.3+ recommended.
 
