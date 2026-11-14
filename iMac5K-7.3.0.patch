@@ -36,7 +36,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/amdgpu/gmc_v8_0.c linux-7.3-patched/driv
  	return size;
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 --- linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-11-14 19:08:14.499913791 +0000
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-11-14 19:36:28.657592310 +0000
 @@ -1565,6 +1565,23 @@
  	dm->cached_state = NULL;
  }
@@ -70,23 +70,6 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-
  	dc_set_power_state(dm->dc, DC_ACPI_CM_POWER_STATE_D3);
  
  	if (dm->dc->caps.ips_support && adev->in_s0ix)
-@@ -4627,6 +4646,16 @@
- 	dc_exit_ips_for_hw_access(dm->dc);
- 	WARN_ON(!dc_commit_streams(dm->dc, &params));
- 
-+	/*if (params.stream_count > 1 &&
-+	    dm->dc->current_state->stream_status[0].timing_sync_info.group_size ==
-+	    params.stream_count) {
-+		struct dm_pp_display_configuration *pp_cfg =
-+			&dm->dc->current_state->pp_display_cfg;
-+
-+		pp_cfg->all_displays_in_sync = true;
-+		dm_pp_apply_display_requirements(dm->dc->ctx, pp_cfg);
-+	}*/
-+
- 	bool frl_stream_found = false;
- 
- 	for (i = 0; i < params.stream_count; i++) {
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c
 --- linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-10-19 00:14:58.000000000 +0100
 +++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-11-14 19:08:42.853666803 +0000
