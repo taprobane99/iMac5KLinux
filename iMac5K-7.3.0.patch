@@ -36,7 +36,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/amdgpu/gmc_v8_0.c linux-7.3-patched/driv
  	return size;
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 --- linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-11-01 20:18:47.681267977 +0000
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-11-14 19:08:14.499913791 +0000
 @@ -1565,6 +1565,23 @@
  	dm->cached_state = NULL;
  }
@@ -48,11 +48,11 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-
 +	for (int i = 0; i < dc->link_count; i++) {
 +		struct dc_link *link = dc->links[i];
 +
-+		if (link->apple5k_peer) {
++		if (link->apple_5k_peer) {
 +			core_link_write_dpcd(link, DP_SOURCE_TABLE_REVISION, zeros, 3);
 +			core_link_write_dpcd(link, DP_EDP_CONFIGURATION_SET, zeros, 1);
 +			core_link_write_dpcd(link, 0x4F1, zeros, 1);
-+			core_link_write_dpcd(link->apple5k_peer, 0x4F1, zeros, 1);
++			core_link_write_dpcd(link->apple_5k_peer, 0x4F1, zeros, 1);
 +			break;
 +		}
 +	}
@@ -61,7 +61,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-
  static int dm_suspend(struct amdgpu_ip_block *ip_block)
  {
  	struct amdgpu_device *adev = ip_block->adev;
-@@ -1632,6 +1651,8 @@
+@@ -1632,6 +1649,8 @@
  
  	amdgpu_dm_hpd_rx_irq_work_suspend(dm);
  
@@ -70,11 +70,11 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-
  	dc_set_power_state(dm->dc, DC_ACPI_CM_POWER_STATE_D3);
  
  	if (dm->dc->caps.ips_support && adev->in_s0ix)
-@@ -4627,6 +4648,16 @@
+@@ -4627,6 +4646,16 @@
  	dc_exit_ips_for_hw_access(dm->dc);
  	WARN_ON(!dc_commit_streams(dm->dc, &params));
  
-+	if (params.stream_count > 1 &&
++	/*if (params.stream_count > 1 &&
 +	    dm->dc->current_state->stream_status[0].timing_sync_info.group_size ==
 +	    params.stream_count) {
 +		struct dm_pp_display_configuration *pp_cfg =
@@ -82,15 +82,23 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c linux-7.3-
 +
 +		pp_cfg->all_displays_in_sync = true;
 +		dm_pp_apply_display_requirements(dm->dc->ctx, pp_cfg);
-+	}
++	}*/
 +
  	bool frl_stream_found = false;
  
  	for (i = 0; i < params.stream_count; i++) {
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c
 --- linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-11-01 20:22:05.684682552 +0000
-@@ -147,6 +147,28 @@
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c	2026-11-14 19:08:42.853666803 +0000
+@@ -29,6 +29,7 @@
+ #include <linux/string.h>
+ #include <linux/acpi.h>
+ #include <linux/i2c.h>
++#include <linux/dmi.h>
+ 
+ #include <drm/drm_atomic.h>
+ #include <drm/drm_probe_helper.h>
+@@ -147,6 +148,28 @@
  		drm_dbg_driver(dev, "Hiding secondary tile on panel id %X\n", panel_id);
  		edid_caps->panel_patch.disable_second_tile = true;
  		break;
@@ -114,31 +122,57 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c li
 +		if (link->connector_signal == SIGNAL_TYPE_EDP &&
 +		    link->ctx->dce_version < DCE_VERSION_12_0 &&
 +		    (link->link_index ^ 1) < link->dc->link_count)
-+			link->dc->links[link->link_index ^ 1]->apple5k_peer = link;
++			link->dc->links[link->link_index ^ 1]->apple_5k_peer = link;
 +		break;
  	default:
  		return;
  	}
+@@ -1241,6 +1264,11 @@
+ 
+ 	if (link->dc->hwss.prepare_ddc)
+ 		link->dc->hwss.prepare_ddc(link);
++	
++	if (link->connector_signal == SIGNAL_TYPE_EDP &&
++	    link->ctx->dce_version < DCE_VERSION_12_0 &&
++	    dmi_match(DMI_SYS_VENDOR, "Apple Inc."))
++		dm_helpers_dp_write_dpcd(ctx, link, 0x4F1, &(const uint8_t){1}, 1);
+ 
+ 	/* some dongles read edid incorrectly the first time,
+ 	 * do check sum and retry to make sure read correct edid.
+diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/clk_mgr/dce100/dce_clk_mgr.c linux-7.3-patched/drivers/gpu/drm/amd/display/dc/clk_mgr/dce100/dce_clk_mgr.c
+--- linux-7.3/drivers/gpu/drm/amd/display/dc/clk_mgr/dce100/dce_clk_mgr.c	2026-10-19 00:14:58.000000000 +0100
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/clk_mgr/dce100/dce_clk_mgr.c	2026-11-14 12:26:25.795016004 +0000
+@@ -319,6 +319,10 @@
+ 	struct dc_state *context)
+ {
+ 	struct dm_pp_display_configuration *pp_display_cfg = &context->pp_display_cfg;
++	
++	pp_display_cfg->all_displays_in_sync =
++		context->bw_ctx.bw.dce.all_displays_in_sync;
++
+ 
+ 	dce110_fill_display_configs(context, pp_display_cfg);
+ 
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/dc.h linux-7.3-patched/drivers/gpu/drm/amd/display/dc/dc.h
 --- linux-7.3/drivers/gpu/drm/amd/display/dc/dc.h	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/dc.h	2026-11-01 20:21:48.459820473 +0000
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/dc.h	2026-11-14 19:09:06.163463752 +0000
 @@ -1991,6 +1991,7 @@
  	bool skip_implict_edp_power_control;
  	bool forced_psr_active;
  	enum backlight_control_type backlight_control_type;
-+	struct dc_link *apple5k_peer;
++	struct dc_link *apple_5k_peer;
  };
  
  struct dc {
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c
 --- linux-7.3/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-11-01 20:20:49.409293294 +0000
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-11-14 19:09:43.484151745 +0000
 @@ -218,7 +218,7 @@
  			 * we assume signal is DVI; it could be corrected
  			 * to HDMI after dongle detection
  			 */
 -			if (!dm_helpers_is_dp_sink_present(link))
-+			if (!link->apple5k_peer && !dm_helpers_is_dp_sink_present(link))
++			if (!link->apple_5k_peer && !dm_helpers_is_dp_sink_present(link))
  				result = SIGNAL_TYPE_DVI_SINGLE_LINK;
  		}
  		break;
@@ -146,8 +180,8 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7
  		}
  	}
  
-+	if (*type == dc_connection_none && link->apple5k_peer) {
-+		core_link_write_dpcd(link->apple5k_peer, 0x4F1, &(const uint8_t){1}, 1);
++	if (*type == dc_connection_none && link->apple_5k_peer) {
++		core_link_write_dpcd(link->apple_5k_peer, 0x4F1, &(const uint8_t){1}, 1);
 +		*type = dc_connection_single;
 +	}
 +
@@ -156,13 +190,13 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7
  
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c
 --- linux-7.3/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c	2026-11-01 20:21:31.438956760 +0000
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capability.c	2026-11-14 19:10:04.660983743 +0000
 @@ -1495,6 +1495,10 @@
  				link->dc->vendor_signature.data.raw,
  				sizeof(link->dc->vendor_signature.data.raw));
  	}
 +
-+	if (link->apple5k_peer)
++	if (link->apple_5k_peer)
 +		core_link_write_dpcd(link, DP_SOURCE_TABLE_REVISION,
 +				     (const uint8_t[]){0x04, 0x1d, 0x03}, 3);
  }
@@ -170,14 +204,42 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capabi
  void dpcd_write_cable_id_to_dprx(struct dc_link *link)
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_phy.c linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_phy.c
 --- linux-7.3/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_phy.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_phy.c	2026-11-01 20:24:14.805648673 +0000
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_phy.c	2026-11-14 19:10:28.267796464 +0000
 @@ -50,6 +50,9 @@
  	if (link->sync_lt_in_progress)
  		return;
  
-+	if (!on && link->apple5k_peer)
++	if (!on && link->apple_5k_peer)
 +		return;
 +
  	core_link_write_dpcd(link, DP_SET_POWER, &state,
  						 sizeof(state));
  
+diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/resource/dce100/dce100_resource.c linux-7.3-patched/drivers/gpu/drm/amd/display/dc/resource/dce100/dce100_resource.c
+--- linux-7.3/drivers/gpu/drm/amd/display/dc/resource/dce100/dce100_resource.c	2026-10-19 00:14:58.000000000 +0100
++++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/resource/dce100/dce100_resource.c	2026-11-14 12:27:53.150726754 +0000
+@@ -887,7 +887,15 @@
+ 	if (at_least_one_pipe) {
+ 		/* TODO implement when needed but for now hardcode max value*/
+ 		context->bw_ctx.bw.dce.dispclk_khz = 681000;
+-		context->bw_ctx.bw.dce.yclk_khz = 250000 * MEMORY_TYPE_MULTIPLIER_CZ;
++		context->bw_ctx.bw.dce.yclk_khz = 250000 * MEMORY_TYPE_MULTIPLIER_CZ;		
++		context->bw_ctx.bw.dce.all_displays_in_sync = context->stream_count > 1;
++		for (i = 1; i < context->stream_count; i++) {
++			if (!resource_are_streams_timing_synchronizable(
++				    context->streams[0], context->streams[i])) {
++				context->bw_ctx.bw.dce.all_displays_in_sync = false;
++				break;
++			}
++		}
+ 	} else {
+ 		/* On DCE 6.0 and 6.4 the PLL0 is both the display engine clock and
+ 		 * the DP clock, and shouldn't be turned off. Just select the display
+@@ -900,6 +908,7 @@
+ 			context->bw_ctx.bw.dce.dispclk_khz = 0;
+ 
+ 		context->bw_ctx.bw.dce.yclk_khz = 0;
++		context->bw_ctx.bw.dce.all_displays_in_sync = false;
+ 	}
+ 
+ 	return DC_OK;
