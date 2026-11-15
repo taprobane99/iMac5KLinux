@@ -81,18 +81,18 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c li
  
  #include <drm/drm_atomic.h>
  #include <drm/drm_probe_helper.h>
-@@ -147,6 +148,28 @@
+@@ -147,6 +148,30 @@
  		drm_dbg_driver(dev, "Hiding secondary tile on panel id %X\n", panel_id);
  		edid_caps->panel_patch.disable_second_tile = true;
  		break;
 +	/*
-+	 * Workaround for Apple 27" 5K iMacs which expose a 2x1 tiled internal
-+	 * panel over an eDP root link and a secondary DP link. Point the
-+	 * secondary link to the root link to latch/unlatch the TCON via DPCD,
-+	 * checking connector_signal as panel IDs can flip after wake.
++	 * Workaround for Apple 21.5" 4K and 27" 5K iMacs which expose a 2x1
++	 * tiled internal panel over an eDP root link and a secondary DP link.
++	 * Point the secondary link to the root link to latch/unlatch the TCON
++	 * via DPCD, checking connector_signal as panel IDs can flip after wake.
 +	 * IDs (Root/Tile): iMac15,1 (AE01/02), iMac17,1 (AE05/06),
-+	 * iMac18,3 (AE11/12), iMac19,1 (AE25/26); TODO (DCE >= 12): iMac19,1
-+	 * Vega, iMacPro1,1 (AE1D/1E), iMac20,x (AE31/32).
++	 * iMac18,3 (AE11/12), iMac18,2/19,2 (AE19/1A), iMac19,1 (AE25/26);
++	 * TODO (DCE >= 12): iMac19,1/19,2 Vega, iMacPro1,1 (AE1D/1E), iMac20,x (AE31/32, AE35/36).
 +	 */
 +	case drm_edid_encode_panel_id('A', 'P', 'P', 0xAE01):
 +	case drm_edid_encode_panel_id('A', 'P', 'P', 0xAE02):
@@ -100,6 +100,8 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c li
 +	case drm_edid_encode_panel_id('A', 'P', 'P', 0xAE06):
 +	case drm_edid_encode_panel_id('A', 'P', 'P', 0xAE11):
 +	case drm_edid_encode_panel_id('A', 'P', 'P', 0xAE12):
++	case drm_edid_encode_panel_id('A', 'P', 'P', 0xAE19):
++	case drm_edid_encode_panel_id('A', 'P', 'P', 0xAE1A):
 +	case drm_edid_encode_panel_id('A', 'P', 'P', 0xAE25):
 +	case drm_edid_encode_panel_id('A', 'P', 'P', 0xAE26):
 +		if (link->connector_signal == SIGNAL_TYPE_EDP &&
