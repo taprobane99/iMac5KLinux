@@ -21,7 +21,7 @@ GNOME_VERSION=$(gnome-shell --version | awk '{print $3}' | cut -d. -f1)
 echo "-> Detected GNOME major version: $GNOME_VERSION"
 
 if [ "$GNOME_VERSION" = "51" ]; then
-    MUTTER_BRANCH="tiletear-v2s-51.0-taprobane99"
+    MUTTER_BRANCH="tiletear-v2s2-51.1-rubin"
 else
     MUTTER_BRANCH="tiletear-v2-50.1-rubin"
 fi
