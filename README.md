@@ -2,14 +2,14 @@
 
 <img width="600" alt="Screenshot From 2026-10-21 22-34-27" src="https://github.com/user-attachments/assets/dfa67778-5760-4ba8-979a-ed5703acc53f" />
 
-Intel 5K iMacs can only use 4K resolution with the existing Linux kernel. This 50 line patch properly activates the 5K tiling mode that is used in macOS.
+Intel 4K/5K iMacs can only use 4K (3840x2160) resolution with the existing Linux kernel. This 50 line patch properly activates the 5K tiling mode that is used in macOS.
 
 Simple one-click script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kernel on iMacs, alongside your existing kernel. You need to install
 the normal OS first e.g. https://ubuntu.com/download/desktop
 
 Works on Ubuntu 26.04 LTS and 26.10. May work on Mint, Zorin, and other Debian distros. Kernel 7.3+ and Mesa 26.3+ recommended.
 
-Works on all 5K iMacs except the 2020 iMac and iMacs with VEGA GPUs.
+Works on all 4K/5K iMacs except the 2020 iMac and iMacs with VEGA GPUs.
 
 Needs 7GB Disk Space and 50-70 minutes compile time.
 
@@ -96,4 +96,4 @@ Please add contributions via opening an Issue. There are sure to be other iMac q
 
 ## Credit
 
-Thanks to the AI-assisted (Claude) discovery at https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-logging which I used to generate my 1,500 line kernel 7.0 patch. My new kernel 7.3 patch is reduced to 50 lines with a combination of human-editing and AI suggestions (Google Gemini). Thanks to Timur Kristóf, https://github.com/MarkPronkin/, and https://github.com/ahmadtv for input, code review, feedback. At some point hopefully this will be mainlined.
+Thanks to the AI-assisted (Claude) discovery at https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-logging which I used to generate my 1,500 line kernel 7.0 patch. My new kernel 7.3 patch is reduced to 50 lines with a combination of human-editing and AI suggestions (Google Gemini). Thanks to Timur Kristóf, https://github.com/MarkPronkin/, and https://github.com/ahmadtv for input, code review, feedback. The 4K/5K patch is in the process of being upstreamed to the mainline Linux kernel.
