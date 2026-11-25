@@ -2,20 +2,20 @@
 
 <img width="600" alt="Screenshot From 2026-10-21 22-34-27" src="https://github.com/user-attachments/assets/dfa67778-5760-4ba8-979a-ed5703acc53f" />
 
-Intel DCI 4K/5K iMacs can only use 4K UHD (3840x2160) resolution with the existing Linux kernel. This 50 line patch properly activates the DCI 4K/5K tiling mode that is used in macOS.
+Intel Retina 4K/5K iMacs can only use 4K UHD (3840x2160) resolution with the existing Linux kernel. This 50 line patch properly activates the Retina 4K/5K tiling mode that is used in macOS.
 
 Simple one-click script `iMac5K-KernelInstall.sh` to download, build, and install 5K Kernel on iMacs, alongside your existing kernel. You need to install
 the normal OS first e.g. https://ubuntu.com/download/desktop
 
 Works on Ubuntu 26.04 LTS and 26.10. May work on Mint, Zorin, and other Debian distros. Kernel 7.3+ and Mesa 26.3+ recommended.
 
-Works on all DCI 4K/5K iMacs except the 2020 iMac and iMacs with VEGA GPUs.
+Works on all Retina 4K/5K iMacs except the 2020 iMac and iMacs with VEGA GPUs.
 
 Needs 7GB Disk Space and 50-70 minutes compile time.
 
 Models confirmed working:
 
-| Generation / Release Year | Model Identifier | GPU Option (Family) | 5K Working |
+| Generation / Release Year | Model Identifier | GPU Option (Family) | 4K / 5K Working |
 | :--- | :--- | :--- | :---: |
 | **Late 2014** | iMac15,1 | R9 M290X (GCN 1) | ❓ |
 | **Late 2014** | iMac15,1 | R9 M295X (GCN 3) | ✅ |
@@ -23,7 +23,10 @@ Models confirmed working:
 | **Mid 2015** | iMac15,1 | R9 M295X (GCN 3) | ✅ |
 | **Late 2015** | iMac17,1 | R9 M380 / M390 (GCN 2) | ✅ |
 | **Late 2015** | iMac17,1 | R9 M395 / M395X (GCN 3) | ✅ |
+| **Mid 2017** | iMac18,2 | Pro 555 / 560 (GCN 4) | ✅ |
 | **Mid 2017** | iMac18,3 | Pro 570 / 575 / 580 (GCN 4) | ✅ |
+| **2019** | iMac19,2 | Pro 555X / 560X (GCN 4) | ✅ |
+| **2019** | iMac19,2 | Pro Vega 20 (GCN 5) | ➖ |
 | **2019** | iMac19,1 | Pro 570X / 575X / 580X (GCN 4) | ✅ |
 | **2019** | iMac19,1 | Pro Vega 48 (GCN 5) | ➖ |
 | **2020** | iMac20,1 | Pro 5300 / 5500 XT (RDNA 1) | ➖ |
@@ -96,4 +99,4 @@ Please add contributions via opening an Issue. There are sure to be other iMac q
 
 ## Credit
 
-Thanks to the AI-assisted (Claude) discovery at https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-logging which I used to generate my 1,500 line kernel 7.0 patch. My new kernel 7.3 patch is reduced to 50 lines with a combination of human-editing and AI suggestions (Google Gemini). Thanks to Timur Kristóf, https://github.com/MarkPronkin/, and https://github.com/ahmadtv for input, code review, feedback. The DCI 4K/5K patch is in the process of being upstreamed to the mainline Linux kernel.
+Thanks to the AI-assisted (Claude) discovery at https://github.com/mcirsta/linux-imac-5k/tree/pro1-apple5k-logging which I used to generate my 1,500 line kernel 7.0 patch. My new kernel 7.3 patch is reduced to 50 lines with a combination of human-editing and AI suggestions (Google Gemini). Thanks to Timur Kristóf, https://github.com/MarkPronkin/, and https://github.com/ahmadtv for input, code review, feedback. The Retina 4K/5K patch is in the process of being upstreamed to the mainline Linux kernel.
