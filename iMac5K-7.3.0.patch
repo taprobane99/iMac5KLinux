@@ -190,18 +190,6 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_capabi
  }
  
  void dpcd_write_cable_id_to_dprx(struct dc_link *link)
-diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_phy.c linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_phy.c
---- linux-7.3/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_phy.c	2026-10-19 00:14:58.000000000 +0100
-+++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/protocols/link_dp_phy.c	2026-11-14 19:10:28.267796464 +0000
-@@ -50,6 +50,9 @@
- 	if (link->sync_lt_in_progress)
- 		return;
- 
-+	if (!on && link->apple_imac_peer)
-+		return;
-+
- 	core_link_write_dpcd(link, DP_SET_POWER, &state,
- 						 sizeof(state));
  
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/resource/dce100/dce100_resource.c linux-7.3-patched/drivers/gpu/drm/amd/display/dc/resource/dce100/dce100_resource.c
 --- linux-7.3/drivers/gpu/drm/amd/display/dc/resource/dce100/dce100_resource.c	2026-10-19 00:14:58.000000000 +0100
