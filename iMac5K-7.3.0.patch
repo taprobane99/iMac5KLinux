@@ -113,7 +113,7 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_helpers.c li
  	default:
  		return;
  	}
-@@ -1241,6 +1266,15 @@
+@@ -1241,6 +1267,15 @@
  
  	if (link->dc->hwss.prepare_ddc)
  		link->dc->hwss.prepare_ddc(link);
