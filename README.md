@@ -34,7 +34,7 @@ Models confirmed working:
 | **2017 (iMac Pro)** | iMacPro1,1 | Pro Vega 56 / 64 / 64X (GCN 5) | ➖ |
 
 **Legend:**
-* ✅ **Working**: Tiled 5K display working with patch.
+* ✅ **Working**: Tiled 4K/5K display working with patch.
 * ➖ **Needs Additional Work**: Requires extra methods to activate 5K. You could try using this patch as a base.
 * ❓ **Needs Confirmation**: Should work from Kernel 7.3 + Mesa 26.3 onwards thanks to work by Valve.
 
