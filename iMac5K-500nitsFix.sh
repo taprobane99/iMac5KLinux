@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # imac-backlight-fix.sh -- Universal 500-nit backlight override for Retina iMacs
-# Supports: iMac17,1 (2015), iMac18,1/18,3 (2017), iMac19,1 (2019), and related models.
+# Supports: iMac17,1 (2015), iMac18,1/18,2/18,3 (2017), iMac19,1/19,2 (2019), and related models.
 #
 # Options:
 #   -n, --dry-run    Inspect, decompile, patch, and compile in scratch space without
