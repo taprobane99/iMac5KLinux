@@ -67,7 +67,7 @@ You also need to install Pavucontrol `sudo apt install pavucontrol` to set 4 cha
 
 ## Wifi
 
-2014-2015 iMacs with the Broadcom 43602 Wifi Card only connect to networks at 40 MHz instead of 80 MHz outside the USA. I have submitted a patch upstream to correct this, effectively doubling wifi speeds on these models.
+2015-2017 4K/5K iMacs with the Broadcom 43602 Wifi Card only connect to networks at 40 MHz instead of 80 MHz outside the USA. I have submitted a patch upstream to correct this, effectively doubling wifi speeds on these models. To fix this now run 'iMac5K-2015to2017-WifiFix.sh'.
 
 ## Wide Gamut Colour
 
