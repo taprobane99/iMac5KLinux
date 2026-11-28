@@ -65,6 +65,10 @@ You also need to install Pavucontrol `sudo apt install pavucontrol` to set 4 cha
 
 <img width="600" alt="image" src="https://github.com/user-attachments/assets/9582ea63-e0ce-40f9-a59e-b0b105edfa54" />
 
+## Wifi
+
+2014-2015 iMacs with the Broadcom 43602 Wifi Card only connect to networks at 40 MHz instead of 80 MHz outside the USA. I have submitted a patch upstream to correct this, effectively doubling wifi speeds on these models.
+
 ## Wide Gamut Colour
 
 To set Ubuntu to use the wide gamut colourspace (DCI-P3) available with the iMac display run `iMac5K-WideGamutColour.sh`.
