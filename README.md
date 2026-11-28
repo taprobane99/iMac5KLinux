@@ -51,13 +51,13 @@ To fix tiny text in the GRUB menu and root shell run `iMac5K-GRUBFontSize-Ubuntu
 ## GPU Quirks
 To fix GPU power management problem that causes slow boot/shutdown and some apps not opening run `iMac5K-GRUBParams.sh`.
 
-To fix max brightness to 500 nits instead of 400 nits using a custom ACPI table run `iMac5K-500nitsFix.sh`.
+To fix max brightness to 500/600 nits (5K/4K) instead of 400/500 nits using a custom ACPI table run `iMac5K-500nitsFix.sh`.
 
 To control GPU power mode `GPU-ToggleButton.ini` can be loaded in to the Custom Command Toggle Gnome Extension (https://github.com/StorageB/custom-command-toggle). It appears in Quick Settings. It will default to power saving mode, and switch to a higher performance mode when toggled on.
 
-## Audio
+## Audio (4K iMac tuning coming soon)
 
-To install Speaker tuning (flat frequency response +/- 4dB) I made by hand using a UMIK-1 measurement microphone run `iMacAudioInstall.sh`. Tuned on late 2015 iMac using the Asahi Audio method. Note: if you have a 2017-2019 iMac you will need to install this first: https://github.com/davidjo/snd_hda_macbookpro
+To install Speaker tuning (flat frequency response +/- 4dB) I made by hand using a UMIK-1 measurement microphone run `iMacAudioInstall.sh`. Tuned on late 2015 5K iMac using the Asahi Audio method. Note: if you have a 2017-2019 4K/5K iMac you will need to install this first: https://github.com/davidjo/snd_hda_macbookpro
 
 <img width="600" alt="Screenshot From 2026-09-20 14-38-19" src="https://github.com/user-attachments/assets/9d2a066f-663d-4ba8-994f-eb8ec3fba7dd" />
 
