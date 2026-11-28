@@ -156,15 +156,6 @@ diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/dc.h linux-7.3-patched/driver
 diff -urN linux-7.3/drivers/gpu/drm/amd/display/dc/link/link_detection.c linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c
 --- linux-7.3/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-10-19 00:14:58.000000000 +0100
 +++ linux-7.3-patched/drivers/gpu/drm/amd/display/dc/link/link_detection.c	2026-11-14 19:09:43.484151745 +0000
-@@ -218,7 +218,7 @@
- 			 * we assume signal is DVI; it could be corrected
- 			 * to HDMI after dongle detection
- 			 */
--			if (!dm_helpers_is_dp_sink_present(link))
-+			if (!link->apple_imac_peer && !dm_helpers_is_dp_sink_present(link))
- 				result = SIGNAL_TYPE_DVI_SINGLE_LINK;
- 		}
- 		break;
 @@ -1621,6 +1621,11 @@
  		}
  	}
